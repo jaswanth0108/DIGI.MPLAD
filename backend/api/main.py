@@ -130,6 +130,8 @@ async def startup():
 
 def _ensure_data():
     if store.master_df is None or store.master_df.empty:
+        store.load()
+    if store.master_df is None or store.master_df.empty:
         raise HTTPException(status_code=503, detail="No data loaded. Run pipeline first.")
 
 

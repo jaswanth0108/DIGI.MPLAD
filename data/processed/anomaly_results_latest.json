@@ -88992,5 +88992,65 @@
       "disclaimer": "Unsupervised anomaly detection. No fraud labels used."
     },
     "model_version": "1.0.0"
+  },
+  {
+    "result_id": 5316,
+    "project_id": 5001,
+    "detection_type": "RULE",
+    "rule_name": "R001: Cost Overrun",
+    "severity": "CRITICAL",
+    "score_contribution": 80.0,
+    "explanation": "Expenditure (\u20b96,000,000) exceeds allocation (\u20b95,000,000) by 20.0% without sanctioned revision.",
+    "detected_at": "2026-09-03T01:50:32.001869"
+  },
+  {
+    "result_id": 5317,
+    "project_id": 5002,
+    "detection_type": "RULE",
+    "rule_name": "R002: Very Old Incomplete Work",
+    "severity": "HIGH",
+    "score_contribution": 75.0,
+    "explanation": "Project has been active for 846 days (> 2 years) without reaching completion status.",
+    "detected_at": "2026-09-03T01:50:43.490305"
+  },
+  {
+    "result_id": 5318,
+    "project_id": 5002,
+    "detection_type": "RULE",
+    "rule_name": "R006: State Allocation Outlier",
+    "severity": "MEDIUM",
+    "score_contribution": 50.0,
+    "explanation": "Allocated amount is >2.5x higher than state median (\u20b92,633,315).",
+    "detected_at": "2026-09-03T01:50:43.490333"
+  },
+  {
+    "result_id": 5319,
+    "project_id": 5003,
+    "detection_type": "RULE",
+    "rule_name": "R001: Cost Overrun",
+    "severity": "CRITICAL",
+    "score_contribution": 80.0,
+    "explanation": "Expenditure (\u20b96,000,000) exceeds allocation (\u20b95,000,000) by 20.0% without sanctioned revision.",
+    "detected_at": "2026-09-03T01:51:19.968559"
+  },
+  {
+    "result_id": 5320,
+    "project_id": 5004,
+    "detection_type": "RULE",
+    "rule_name": "R002: Very Old Incomplete Work",
+    "severity": "HIGH",
+    "score_contribution": 75.0,
+    "explanation": "Project has been active for 846 days (> 2 years) without reaching completion status.",
+    "detected_at": "2026-09-03T01:51:20.618858"
+  },
+  {
+    "result_id": 5321,
+    "project_id": 5004,
+    "detection_type": "RULE",
+    "rule_name": "R006: State Allocation Outlier",
+    "severity": "MEDIUM",
+    "score_contribution": 50.0,
+    "explanation": "Allocated amount is >2.5x higher than state median (\u20b92,647,106).",
+    "detected_at": "2026-09-03T01:51:20.618877"
   }
 ]
