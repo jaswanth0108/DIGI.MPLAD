@@ -31,24 +31,6 @@ const CATEGORIES = [
   'Other Statutory Works',
 ];
 
-const PREDEFINED_COLUMNS = [
-  { name: 'house_type', required: true, example: 'LOK / RAJYA', desc: 'Parliamentary House type (Lok Sabha or Rajya Sabha)' },
-  { name: 'state_name', required: true, example: 'ANDHRA PRADESH', desc: 'Full State or Union Territory name' },
-  { name: 'constituency_name', required: true, example: 'VISAKHAPATNAM', desc: 'Parliamentary Constituency name' },
-  { name: 'mp_name', required: true, example: 'HONBLE MP NAME', desc: "Hon'ble Member of Parliament name" },
-  { name: 'category', required: true, example: 'Drinking Water & Sanitation', desc: 'Work Sector / Category' },
-  { name: 'ida_name', required: true, example: 'District Collectorate Visakhapatnam', desc: 'Implementing District Authority' },
-  { name: 'allocated_amount', required: true, example: '5000000', desc: 'Approved / Sanctioned Amount in Indian Rupees' },
-  { name: 'expenditure_amt', required: false, example: '1200000', desc: 'Disbursed Expenditure amount in INR (default: 0)' },
-  { name: 'work_status', required: true, example: 'On Going / Completed / Unsanctioned', desc: 'Current project execution status' },
-  { name: 'recommended_date', required: true, example: '2024-06-15', desc: 'Recommendation / Sanction Date (YYYY-MM-DD)' },
-  { name: 'letter_no', required: false, example: 'MPLADS/VIS/2024/001', desc: 'Sanction Order / Docket Reference Number' },
-  { name: 'block_name', required: false, example: 'Anandapuram', desc: 'Taluka / Block name' },
-  { name: 'village_name', required: false, example: 'Boni', desc: 'Village or Ward location' },
-  { name: 'location_type', required: false, example: 'Rural / Urban', desc: 'Rural or Urban classification' },
-  { name: 'work_description', required: false, example: 'Community RO purification plant', desc: 'Scope / description of physical works' },
-];
-
 export const OfficerIngestion: React.FC = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -665,45 +647,61 @@ export const OfficerIngestion: React.FC = () => {
                 </div>
               )}
 
-              {/* Predefined Columns Specification Guide */}
+              {/* Predefined Columns Specification Guide - One Sample Format */}
               <div className="card">
-                <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Table size={18} color="var(--accent-teal)" />
-                  <span>Predefined Excel Column Format &amp; Schema Specification</span>
-                </div>
-                <div style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', marginBottom: '1rem', lineHeight: 1.5 }}>
-                  The uploaded Excel sheet must contain the following columns (headers are case-insensitive and spaces/underscores are automatically mapped):
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
+                    <Table size={18} color="var(--accent-teal)" />
+                    <span>Predefined Excel Column Format &amp; Sample Row</span>
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    Column headers are case-insensitive and mapped automatically
+                  </div>
                 </div>
 
-                <div className="data-table-wrapper">
-                  <table className="data-table" style={{ fontSize: '0.8rem' }}>
+                <div style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', marginBottom: '1rem', lineHeight: 1.5 }}>
+                  Ensure your Excel (.xlsx, .xls) or CSV spreadsheet includes the standard columns as shown in this sample format:
+                </div>
+
+                <div className="data-table-wrapper" style={{ overflowX: 'auto' }}>
+                  <table className="data-table" style={{ fontSize: '0.75rem' }}>
                     <thead>
                       <tr>
-                        <th>Column Name</th>
-                        <th>Required?</th>
-                        <th>Example Value</th>
-                        <th>Description &amp; Guidelines</th>
+                        <th>house_type</th>
+                        <th>state_name</th>
+                        <th>constituency_name</th>
+                        <th>mp_name</th>
+                        <th>category</th>
+                        <th>ida_name</th>
+                        <th>allocated_amount</th>
+                        <th>expenditure_amt</th>
+                        <th>work_status</th>
+                        <th>recommended_date</th>
+                        <th>letter_no</th>
+                        <th>block_name</th>
+                        <th>village_name</th>
+                        <th>location_type</th>
+                        <th>work_description</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {PREDEFINED_COLUMNS.map((col) => (
-                        <tr key={col.name}>
-                          <td>
-                            <code style={{ color: 'var(--text-accent)', fontWeight: 700 }}>{col.name}</code>
-                          </td>
-                          <td>
-                            {col.required ? (
-                              <span style={{ color: 'var(--risk-critical)', fontWeight: 800, fontSize: '0.72rem' }}>REQUIRED</span>
-                            ) : (
-                              <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>OPTIONAL</span>
-                            )}
-                          </td>
-                          <td>
-                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>{col.example}</span>
-                          </td>
-                          <td style={{ color: 'var(--text-secondary)' }}>{col.desc}</td>
-                        </tr>
-                      ))}
+                      <tr>
+                        <td><code style={{ color: '#38bdf8', fontWeight: 700 }}>LOK</code></td>
+                        <td><strong>ANDHRA PRADESH</strong></td>
+                        <td><strong>VISAKHAPATNAM</strong></td>
+                        <td>HONBLE MP VISAKHAPATNAM</td>
+                        <td>Drinking Water &amp; Sanitation</td>
+                        <td>District Collectorate Visakhapatnam</td>
+                        <td className="amount" style={{ color: 'var(--accent-teal)', fontWeight: 800 }}>5000000</td>
+                        <td className="amount">1200000</td>
+                        <td><span style={{ color: '#38bdf8', fontWeight: 700 }}>On Going</span></td>
+                        <td>2024-06-15</td>
+                        <td>MPLADS/VIS/2024/001</td>
+                        <td>Anandapuram</td>
+                        <td>Boni</td>
+                        <td>Rural</td>
+                        <td style={{ minWidth: 200 }}>Installation of community RO water purification plant</td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>
