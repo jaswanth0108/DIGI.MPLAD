@@ -10,17 +10,18 @@ Security:
 - No raw LLM-generated SQL execution
 """
 
+import io
 import json
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 
 import numpy as np
 import pandas as pd
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 
 import sys
 import os
@@ -753,25 +754,18 @@ async def get_filter_constituencies(state_name: str):
     return {"constituencies": sorted(const)}
 
 
-@app.post("/api/projects/submit")
-async def submit_project(project: NewProjectInput):
-    """
-    Ingest a new MPLADS project record via the frontend,
-    execute instant feature extraction, rule anomaly detection,
-    and risk scoring, then insert it live into the dataset.
-    """
-    _ensure_data()
-    df = store.master_df
-
-    # 1. Assign new unique project ID
-    new_id = int(df["project_id"].max() + 1) if "project_id" in df.columns and len(df) > 0 else 100001
-
-    # 2. Parse dates & compute temporal features
+def _process_single_project_data(p_dict: dict, new_id: int, df: pd.DataFrame, existing_anomalies_count: int):
+    """Assess and construct full project record and detect anomalies."""
+    rec_date_str = str(p_dict.get("recommended_date") or "").strip()
     rec_date = None
-    if project.recommended_date:
+    if rec_date_str and rec_date_str.lower() != "nan" and rec_date_str.lower() != "nat":
         try:
-            rec_date = datetime.strptime(project.recommended_date, "%Y-%m-%d").date()
-        except ValueError:
+            # Handle standard date string or timestamp
+            if isinstance(p_dict.get("recommended_date"), (datetime, pd.Timestamp)):
+                rec_date = p_dict["recommended_date"].date()
+            else:
+                rec_date = pd.to_datetime(rec_date_str).date()
+        except Exception:
             rec_date = datetime.now().date()
     else:
         rec_date = datetime.now().date()
@@ -779,23 +773,31 @@ async def submit_project(project: NewProjectInput):
     today = datetime.now().date()
     age_days = max(0, (today - rec_date).days)
 
-    # 3. Status flags
-    status_clean = project.work_status.strip().title()
+    status_clean = str(p_dict.get("work_status") or "On Going").strip().title()
     is_completed = status_clean.lower() == "completed"
     is_ongoing = status_clean.lower() in ["on going", "ongoing", "sanctioned"]
     is_unsanctioned = status_clean.lower() == "unsanctioned"
     is_overdue = (age_days > 365) and not is_completed
 
-    # 4. Financial features
-    alloc = float(project.allocated_amount)
-    exp = float(project.expenditure_amt)
+    try:
+        alloc = float(p_dict.get("allocated_amount") or 0.0)
+    except Exception:
+        alloc = 0.0
+
+    try:
+        exp = float(p_dict.get("expenditure_amt") or 0.0)
+    except Exception:
+        exp = 0.0
+
     exp_ratio = round(exp / alloc, 4) if alloc > 0 else 0.0
     cost_var = round(((exp - alloc) / alloc * 100), 2) if alloc > 0 else 0.0
     is_stalled = (age_days > 365) and is_ongoing and (exp_ratio < 0.05)
 
-    # 5. Peer stats
-    district_peers = df[df["constituency_name"].str.upper() == project.constituency_name.strip().upper()]
-    state_peers = df[df["state_name"].str.upper() == project.state_name.strip().upper()]
+    const_str = str(p_dict.get("constituency_name") or "CONSTITUENCY").strip().upper()
+    state_str = str(p_dict.get("state_name") or "STATE").strip().upper()
+
+    district_peers = df[df["constituency_name"].str.upper() == const_str] if not df.empty else pd.DataFrame()
+    state_peers = df[df["state_name"].str.upper() == state_str] if not df.empty else pd.DataFrame()
 
     dist_med = float(district_peers["allocated_amount"].median()) if not district_peers.empty else (float(df["allocated_amount"].median()) if not df.empty else alloc)
     st_med = float(state_peers["allocated_amount"].median()) if not state_peers.empty else (float(df["allocated_amount"].median()) if not df.empty else alloc)
@@ -803,7 +805,6 @@ async def submit_project(project: NewProjectInput):
     amt_vs_dist_pct = round(((alloc - dist_med) / dist_med * 100), 2) if dist_med > 0 else 0.0
     amt_vs_st_pct = round(((alloc - st_med) / st_med * 100), 2) if st_med > 0 else 0.0
 
-    # 6. Evaluate Deterministic Rules
     rule_anomalies = []
     fin_score = 0.0
     delay_score = 0.0
@@ -814,7 +815,7 @@ async def submit_project(project: NewProjectInput):
     if exp > (alloc * 1.05):
         fin_score = max(fin_score, 80.0)
         rule_anomalies.append({
-            "result_id": len(store.anomalies) + len(rule_anomalies) + 1,
+            "result_id": existing_anomalies_count + len(rule_anomalies) + 1,
             "project_id": new_id,
             "detection_type": "RULE",
             "rule_name": "R001: Cost Overrun",
@@ -828,7 +829,7 @@ async def submit_project(project: NewProjectInput):
     if is_unsanctioned and exp > 0:
         fin_score = max(fin_score, 90.0)
         rule_anomalies.append({
-            "result_id": len(store.anomalies) + len(rule_anomalies) + 1,
+            "result_id": existing_anomalies_count + len(rule_anomalies) + 1,
             "project_id": new_id,
             "detection_type": "RULE",
             "rule_name": "R004: Unsanctioned Expenditure",
@@ -842,7 +843,7 @@ async def submit_project(project: NewProjectInput):
     if age_days >= 730 and not is_completed:
         delay_score = max(delay_score, 75.0)
         rule_anomalies.append({
-            "result_id": len(store.anomalies) + len(rule_anomalies) + 1,
+            "result_id": existing_anomalies_count + len(rule_anomalies) + 1,
             "project_id": new_id,
             "detection_type": "RULE",
             "rule_name": "R002: Very Old Incomplete Work",
@@ -854,7 +855,7 @@ async def submit_project(project: NewProjectInput):
     elif age_days >= 365 and is_ongoing:
         delay_score = max(delay_score, 50.0)
         rule_anomalies.append({
-            "result_id": len(store.anomalies) + len(rule_anomalies) + 1,
+            "result_id": existing_anomalies_count + len(rule_anomalies) + 1,
             "project_id": new_id,
             "detection_type": "RULE",
             "rule_name": "R003: Ongoing Project Overdue",
@@ -868,7 +869,7 @@ async def submit_project(project: NewProjectInput):
     if is_stalled:
         exp_score = max(exp_score, 65.0)
         rule_anomalies.append({
-            "result_id": len(store.anomalies) + len(rule_anomalies) + 1,
+            "result_id": existing_anomalies_count + len(rule_anomalies) + 1,
             "project_id": new_id,
             "detection_type": "RULE",
             "rule_name": "R008: Stalled Funds",
@@ -882,7 +883,7 @@ async def submit_project(project: NewProjectInput):
     if dist_med > 0 and alloc > (dist_med * 3.0):
         peer_score = max(peer_score, 70.0)
         rule_anomalies.append({
-            "result_id": len(store.anomalies) + len(rule_anomalies) + 1,
+            "result_id": existing_anomalies_count + len(rule_anomalies) + 1,
             "project_id": new_id,
             "detection_type": "RULE",
             "rule_name": "R005: District Allocation Outlier",
@@ -894,7 +895,7 @@ async def submit_project(project: NewProjectInput):
     elif st_med > 0 and alloc > (st_med * 2.5):
         peer_score = max(peer_score, 50.0)
         rule_anomalies.append({
-            "result_id": len(store.anomalies) + len(rule_anomalies) + 1,
+            "result_id": existing_anomalies_count + len(rule_anomalies) + 1,
             "project_id": new_id,
             "detection_type": "RULE",
             "rule_name": "R006: State Allocation Outlier",
@@ -904,7 +905,6 @@ async def submit_project(project: NewProjectInput):
             "detected_at": datetime.now().isoformat(),
         })
 
-    # 7. Composite Risk Score
     overall_score = round(
         settings.weight_financial * fin_score +
         settings.weight_delay * delay_score +
@@ -914,21 +914,24 @@ async def submit_project(project: NewProjectInput):
     )
     risk_band = settings.get_risk_band(overall_score)
 
-    # 8. Construct full row record
-    new_record = {
+    record = {
         "project_id": new_id,
-        "house_type": project.house_type or "LOK",
-        "state_name": project.state_name.strip().upper(),
-        "constituency_name": project.constituency_name.strip().upper(),
-        "mp_name": project.mp_name.strip().upper(),
-        "city_name": project.constituency_name.strip().title(),
-        "ida_name": f"District Collectorate, {project.constituency_name.strip().title()}",
-        "location_type": project.location_type or "Rural",
+        "house_type": str(p_dict.get("house_type") or "LOK").upper(),
+        "state_name": state_str,
+        "constituency_name": const_str,
+        "mp_name": str(p_dict.get("mp_name") or "HONBLE MP").strip().upper(),
+        "city_name": str(p_dict.get("city_name") or const_str.title()),
+        "ida_name": str(p_dict.get("ida_name") or f"District Collectorate, {const_str.title()}"),
+        "location_type": str(p_dict.get("location_type") or "Rural"),
+        "category": str(p_dict.get("category") or "Community Infrastructure"),
+        "work_description": str(p_dict.get("work_description") or p_dict.get("category") or "MPLADS Development Project"),
+        "block_name": str(p_dict.get("block_name") or ""),
+        "village_name": str(p_dict.get("village_name") or ""),
         "allocated_amount": alloc,
         "expenditure_amt": exp,
-        "recommended_date": rec_date,
+        "recommended_date": str(rec_date),
         "work_status": status_clean,
-        "dataset_source": "Live Ingest / User Submission",
+        "dataset_source": "Authorized Officer Ingestion",
         "expenditure_ratio": exp_ratio,
         "project_age_days": age_days,
         "is_completed": is_completed,
@@ -949,18 +952,30 @@ async def submit_project(project: NewProjectInput):
         "ml_anomaly_score": 0.0,
         "overall_risk_score": overall_score,
         "risk_band": risk_band,
-        "letter_no": project.letter_no or f"MPLADS/{project.constituency_name[:3].upper()}/{datetime.now().year}/{new_id}",
+        "letter_no": str(p_dict.get("letter_no") or f"MPLADS/{const_str[:3]}/{datetime.now().year}/{new_id}"),
         "ingested_at": datetime.now().isoformat(),
         "model_version": settings.model_version,
         "rules_version": settings.rules_version,
     }
 
-    # 9. Insert live into in-memory store (at the very top of the DataFrame)
-    new_df_row = pd.DataFrame([new_record])
-    store.master_df = pd.concat([new_df_row, store.master_df], ignore_index=True)
-    store.anomalies.extend(rule_anomalies)
+    return record, rule_anomalies, overall_score, risk_band
 
-    # 10. Persist to master_projects_latest.json
+
+@app.post("/api/projects/submit")
+async def submit_project(project: NewProjectInput):
+    """Single project ingestion via form."""
+    _ensure_data()
+    df = store.master_df
+    new_id = int(df["project_id"].max() + 1) if "project_id" in df.columns and len(df) > 0 else 100001
+
+    record, anomalies, overall_score, risk_band = _process_single_project_data(
+        project.dict(), new_id, df, len(store.anomalies)
+    )
+
+    new_df_row = pd.DataFrame([record])
+    store.master_df = pd.concat([new_df_row, store.master_df], ignore_index=True)
+    store.anomalies.extend(anomalies)
+
     try:
         master_path = store.data_dir / "master_projects_latest.json"
         store.master_df.to_json(master_path, orient="records", date_format="iso", default_handler=str, indent=2)
@@ -973,11 +988,130 @@ async def submit_project(project: NewProjectInput):
     return {
         "status": "success",
         "message": f"Project #{new_id} ingested and assessed successfully. Risk band: {risk_band} ({overall_score}/100)",
-        "project": _project_to_detail(new_record),
-        "anomalies_detected": rule_anomalies,
+        "project": _project_to_detail(record),
+        "anomalies_detected": anomalies,
         "overall_risk_score": overall_score,
         "risk_band": risk_band,
     }
+
+
+@app.post("/api/projects/upload-excel")
+async def upload_excel_projects(file: UploadFile = File(...)):
+    """
+    Authorized Officer Excel / CSV Batch Ingestion Endpoint.
+    Parses Excel/CSV with predefined columns, runs instant 11-rule audit engine,
+    and prepends all records into the live national surveillance dataset.
+    """
+    _ensure_data()
+    df = store.master_df
+
+    contents = await file.read()
+    filename = file.filename.lower()
+
+    # 1. Parse File into DataFrame
+    try:
+        if filename.endswith(".csv"):
+            upload_df = pd.read_csv(io.BytesIO(contents))
+        elif filename.endswith((".xlsx", ".xls")):
+            upload_df = pd.read_excel(io.BytesIO(contents))
+        else:
+            raise HTTPException(status_code=400, detail="Invalid file format. Please upload an .xlsx, .xls, or .csv file.")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to parse file: {str(e)}")
+
+    if upload_df.empty:
+        raise HTTPException(status_code=400, detail="The uploaded Excel sheet contains no data rows.")
+
+    # 2. Normalize and Map Column Headers
+    header_aliases = {
+        "house_type": ["house_type", "house", "parliamentary_house", "house type", "parliamentary house"],
+        "state_name": ["state_name", "state", "state/ut", "state_ut", "state name"],
+        "constituency_name": ["constituency_name", "constituency", "parliamentary_constituency", "constituency name", "parliamentary constituency"],
+        "mp_name": ["mp_name", "mp", "member_of_parliament", "honble_mp", "mp name", "honble mp"],
+        "category": ["category", "work_category", "sector", "work category"],
+        "ida_name": ["ida_name", "ida", "implementing_agency", "implementing_district_authority", "ida name", "district authority"],
+        "allocated_amount": ["allocated_amount", "allocated", "sanctioned_amount", "sanction_amount", "budget", "allocated amount", "sanctioned amount"],
+        "expenditure_amt": ["expenditure_amt", "expenditure", "spent", "disbursed", "expenditure amount", "spent amount"],
+        "work_status": ["work_status", "status", "stage", "work status"],
+        "recommended_date": ["recommended_date", "date", "recommendation_date", "sanction_date", "recommended date"],
+        "letter_no": ["letter_no", "letter", "docket_no", "sanction_letter", "letter no", "docket no", "sanction letter no"],
+        "block_name": ["block_name", "block", "taluka", "block name"],
+        "village_name": ["village_name", "village", "ward", "village name"],
+        "location_type": ["location_type", "location", "area_type", "location type"],
+        "work_description": ["work_description", "description", "work_name", "work description", "work title"],
+    }
+
+    norm_cols = {}
+    for col in upload_df.columns:
+        clean_col = str(col).strip().lower()
+        matched = False
+        for std_name, aliases in header_aliases.items():
+            if clean_col == std_name or clean_col in aliases:
+                norm_cols[col] = std_name
+                matched = True
+                break
+        if not matched:
+            norm_cols[col] = clean_col.replace(" ", "_")
+
+    upload_df = upload_df.rename(columns=norm_cols)
+
+    # 3. Process every row
+    new_records = []
+    all_new_anomalies = []
+    current_max_id = int(df["project_id"].max()) if "project_id" in df.columns and len(df) > 0 else 100000
+
+    for idx, row in upload_df.iterrows():
+        current_max_id += 1
+        row_dict = row.to_dict()
+        record, anomalies, score, band = _process_single_project_data(
+            row_dict, current_max_id, df, len(store.anomalies) + len(all_new_anomalies)
+        )
+        new_records.append(record)
+        all_new_anomalies.extend(anomalies)
+
+    # 4. Concatenate and Persist
+    new_batch_df = pd.DataFrame(new_records)
+    store.master_df = pd.concat([new_batch_df, store.master_df], ignore_index=True)
+    store.anomalies.extend(all_new_anomalies)
+
+    try:
+        master_path = store.data_dir / "master_projects_latest.json"
+        store.master_df.to_json(master_path, orient="records", date_format="iso", default_handler=str, indent=2)
+        anomalies_path = store.data_dir / "anomaly_results_latest.json"
+        with open(anomalies_path, "w") as f:
+            json.dump(store.anomalies, f, indent=2, default=str)
+    except Exception as e:
+        logger.warning(f"Could not persist batch uploaded projects: {e}")
+
+    high_count = sum(1 for r in new_records if r["risk_band"] in ["HIGH", "CRITICAL"])
+    critical_count = sum(1 for r in new_records if r["risk_band"] == "CRITICAL")
+
+    return {
+        "status": "success",
+        "message": f"Successfully ingested {len(new_records)} projects from '{file.filename}'. {high_count} projects flagged for priority audit.",
+        "total_uploaded": len(new_records),
+        "high_risk_count": high_count,
+        "critical_risk_count": critical_count,
+        "projects": [_project_to_summary(r) for r in new_records],
+        "anomalies_detected": len(all_new_anomalies),
+    }
+
+
+@app.get("/api/projects/template/download")
+async def download_excel_template():
+    """Generates and returns the official pre-formatted CSV template with sample data."""
+    template_csv = (
+        "house_type,state_name,constituency_name,mp_name,category,ida_name,allocated_amount,expenditure_amt,work_status,recommended_date,letter_no,block_name,village_name,location_type,work_description\n"
+        "LOK,ANDHRA PRADESH,VISAKHAPATNAM,HONBLE MP VISAKHAPATNAM,Drinking Water & Sanitation,District Collectorate Visakhapatnam,5000000,1200000,On Going,2024-06-15,MPLADS/VIS/2024/001,Anandapuram,Boni,Rural,Installation of community RO water purification plant\n"
+        "LOK,MAHARASHTRA,PUNE,HONBLE MP PUNE,Rural Roadways & Connectivity,District Collectorate Pune,7500000,0,On Going,2024-04-10,MPLADS/PUN/2024/014,Haveli,Khadakwasla,Rural,Construction of BT connecting road from main junction\n"
+        "RAJYA,UTTAR PRADESH,AGRA,HONBLE MP AGRA,Education & School Infrastructure,District Collectorate Agra,3500000,3800000,Completed,2023-08-20,MPLADS/AGR/2023/089,Fatehabad,Dhana,Rural,Additional school classrooms and computer laboratory\n"
+    )
+    return StreamingResponse(
+        io.StringIO(template_csv),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=MPLADS_Official_Ingestion_Template.csv"}
+    )
+
 
 
 @app.get("/api/data/reload")

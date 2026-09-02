@@ -68,5 +68,22 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(data),
     }),
+
+  uploadExcelProjects: async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(`${API_BASE}/api/projects/upload-excel`, {
+      method: 'POST',
+      body: formData,
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || `Upload error (${res.status}): ${res.statusText}`);
+    }
+    return res.json();
+  },
+
+  getTemplateDownloadUrl: () => `${API_BASE}/api/projects/template/download`,
 };
+
 

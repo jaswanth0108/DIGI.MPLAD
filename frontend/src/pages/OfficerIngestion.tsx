@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Lock,
@@ -11,6 +11,10 @@ import {
   ArrowRight,
   RefreshCw,
   LogOut,
+  FileSpreadsheet,
+  Download,
+  UploadCloud,
+  Table,
 } from 'lucide-react';
 import { api } from '../api';
 import { RiskBadge } from '../components/RiskBadge';
@@ -27,8 +31,27 @@ const CATEGORIES = [
   'Other Statutory Works',
 ];
 
+const PREDEFINED_COLUMNS = [
+  { name: 'house_type', required: true, example: 'LOK / RAJYA', desc: 'Parliamentary House type (Lok Sabha or Rajya Sabha)' },
+  { name: 'state_name', required: true, example: 'ANDHRA PRADESH', desc: 'Full State or Union Territory name' },
+  { name: 'constituency_name', required: true, example: 'VISAKHAPATNAM', desc: 'Parliamentary Constituency name' },
+  { name: 'mp_name', required: true, example: 'HONBLE MP NAME', desc: "Hon'ble Member of Parliament name" },
+  { name: 'category', required: true, example: 'Drinking Water & Sanitation', desc: 'Work Sector / Category' },
+  { name: 'ida_name', required: true, example: 'District Collectorate Visakhapatnam', desc: 'Implementing District Authority' },
+  { name: 'allocated_amount', required: true, example: '5000000', desc: 'Approved / Sanctioned Amount in Indian Rupees' },
+  { name: 'expenditure_amt', required: false, example: '1200000', desc: 'Disbursed Expenditure amount in INR (default: 0)' },
+  { name: 'work_status', required: true, example: 'On Going / Completed / Unsanctioned', desc: 'Current project execution status' },
+  { name: 'recommended_date', required: true, example: '2024-06-15', desc: 'Recommendation / Sanction Date (YYYY-MM-DD)' },
+  { name: 'letter_no', required: false, example: 'MPLADS/VIS/2024/001', desc: 'Sanction Order / Docket Reference Number' },
+  { name: 'block_name', required: false, example: 'Anandapuram', desc: 'Taluka / Block name' },
+  { name: 'village_name', required: false, example: 'Boni', desc: 'Village or Ward location' },
+  { name: 'location_type', required: false, example: 'Rural / Urban', desc: 'Rural or Urban classification' },
+  { name: 'work_description', required: false, example: 'Community RO purification plant', desc: 'Scope / description of physical works' },
+];
+
 export const OfficerIngestion: React.FC = () => {
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Authentication State
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
@@ -46,7 +69,17 @@ export const OfficerIngestion: React.FC = () => {
   const [captchaAnswer, setCaptchaAnswer] = useState('');
   const [authError, setAuthError] = useState<string | null>(null);
 
-  // Project Ingestion Form State
+  // Ingestion Mode: 'excel' (primary) or 'single'
+  const [activeTab, setActiveTab] = useState<'excel' | 'single'>('excel');
+
+  // Excel Upload State
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewRows, setPreviewRows] = useState<any[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadResult, setUploadResult] = useState<any>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  // Single Project Ingestion Form State
   const [formData, setFormData] = useState({
     house_type: 'LOK',
     state_name: 'ANDHRA PRADESH',
@@ -82,7 +115,6 @@ export const OfficerIngestion: React.FC = () => {
       return;
     }
 
-    // Standard Government Security PIN requirement
     if (loginPin !== 'MOSPI@GOV2026' && loginPin !== 'MOSPI@2026') {
       setAuthError('Invalid Security Access PIN. Please verify with your Nodal Authority.');
       return;
@@ -93,7 +125,6 @@ export const OfficerIngestion: React.FC = () => {
       return;
     }
 
-    // Success Authentication
     sessionStorage.setItem('digi_mplad_officer_auth', 'true');
     sessionStorage.setItem('digi_mplad_officer_id', cleanId);
     sessionStorage.setItem('digi_mplad_officer_role', loginRole);
@@ -107,9 +138,91 @@ export const OfficerIngestion: React.FC = () => {
     sessionStorage.removeItem('digi_mplad_officer_role');
     setIsAuthenticated(false);
     setSubmitResult(null);
+    setUploadResult(null);
   };
 
-  // Handle Project Submission
+  // Handle Client File Selection & Preview
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setSelectedFile(file);
+    setUploadError(null);
+    setUploadResult(null);
+
+    // If CSV, parse first few rows for live preview
+    if (file.name.endsWith('.csv')) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const text = event.target?.result as string;
+          const lines = text.split('\n').filter((l) => l.trim().length > 0);
+          if (lines.length > 1) {
+            const headers = lines[0].split(',').map((h) => h.trim());
+            const rows = lines.slice(1, 6).map((line) => {
+              const vals = line.split(',');
+              const obj: any = {};
+              headers.forEach((h, i) => {
+                obj[h] = vals[i]?.trim();
+              });
+              return obj;
+            });
+            setPreviewRows(rows);
+          }
+        } catch (err) {
+          console.warn('Could not parse CSV preview:', err);
+        }
+      };
+      reader.readAsText(file);
+    } else {
+      setPreviewRows([]);
+    }
+  };
+
+  // Upload Excel / CSV
+  const handleUploadExcel = async () => {
+    if (!selectedFile) {
+      setUploadError('Please select an Excel (.xlsx/.xls) or CSV file first.');
+      return;
+    }
+
+    setUploading(true);
+    setUploadError(null);
+    setUploadResult(null);
+
+    try {
+      const res = await api.uploadExcelProjects(selectedFile);
+      setUploadResult(res);
+      setSelectedFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } catch (err: any) {
+      setUploadError(err.message || 'Failed to process Excel file.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // Download Official Template
+  const handleDownloadTemplate = () => {
+    const csvContent =
+      'house_type,state_name,constituency_name,mp_name,category,ida_name,allocated_amount,expenditure_amt,work_status,recommended_date,letter_no,block_name,village_name,location_type,work_description\n' +
+      'LOK,ANDHRA PRADESH,VISAKHAPATNAM,HONBLE MP VISAKHAPATNAM,Drinking Water & Sanitation,District Collectorate Visakhapatnam,5000000,1200000,On Going,2024-06-15,MPLADS/VIS/2024/001,Anandapuram,Boni,Rural,Installation of community RO water purification plant\n' +
+      'LOK,MAHARASHTRA,PUNE,HONBLE MP PUNE,Rural Roadways & Connectivity,District Collectorate Pune,7500000,0,On Going,2024-04-10,MPLADS/PUN/2024/014,Haveli,Khadakwasla,Rural,Construction of BT connecting road from main junction\n' +
+      'RAJYA,UTTAR PRADESH,AGRA,HONBLE MP AGRA,Education & School Infrastructure,District Collectorate Agra,3500000,3800000,Completed,2023-08-20,MPLADS/AGR/2023/089,Fatehabad,Dhana,Rural,Additional school classrooms and computer laboratory\n';
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'MPLADS_Official_Ingestion_Template.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Handle Single Project Submission
   const handleSubmitProject = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
@@ -136,7 +249,7 @@ export const OfficerIngestion: React.FC = () => {
         <div>
           <h1>Authorized Officer Ingestion Portal</h1>
           <div className="page-desc">
-            Restricted Government Registry Gateway for official project creation, verification, and instant AI audit scoring
+            Restricted Government Registry Gateway for official batch Excel project creation, validation, and AI anomaly pre-screening
           </div>
         </div>
         {isAuthenticated && (
@@ -300,332 +413,603 @@ export const OfficerIngestion: React.FC = () => {
             </div>
           </div>
 
-          {/* Ingestion Form Card */}
-          <div className="card" style={{ marginBottom: '1.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem' }}>
-              <FilePlus2 size={22} color="var(--accent-blue)" />
-              <div className="card-title" style={{ margin: 0 }}>
-                Official MPLADS Work Registration & Risk Pre-Screening
-              </div>
-            </div>
-            <div style={{ color: 'var(--text-secondary)', fontSize: '0.84rem', marginBottom: '1.5rem' }}>
-              Please enter official work details matching the signed Sanction Order. The system executes instantaneous rule evaluation (R001–R011) and registers the record directly into the national surveillance data store.
-            </div>
+          {/* Ingestion Mode Switcher */}
+          <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem' }}>
+            <button
+              className={`btn ${activeTab === 'excel' ? 'btn-primary' : 'btn-ghost'}`}
+              onClick={() => setActiveTab('excel')}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.7rem 1.4rem' }}
+            >
+              <FileSpreadsheet size={18} />
+              <span>Excel / CSV Batch Ingestion (Recommended)</span>
+            </button>
+            <button
+              className={`btn ${activeTab === 'single' ? 'btn-primary' : 'btn-ghost'}`}
+              onClick={() => setActiveTab('single')}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.7rem 1.4rem' }}
+            >
+              <FilePlus2 size={18} />
+              <span>Single Work Entry Form</span>
+            </button>
+          </div>
 
-            <form onSubmit={handleSubmitProject} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem' }}>
-              {/* House Type */}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
-                  PARLIAMENTARY HOUSE *
-                </label>
-                <select
-                  className="search-input"
-                  value={formData.house_type}
-                  onChange={(e) => setFormData({ ...formData, house_type: e.target.value })}
-                  required
-                >
-                  <option value="LOK">Lok Sabha (House of the People)</option>
-                  <option value="RAJYA">Rajya Sabha (Council of States)</option>
-                </select>
-              </div>
-
-              {/* State */}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
-                  STATE / UT *
-                </label>
-                <input
-                  type="text"
-                  className="search-input"
-                  value={formData.state_name}
-                  onChange={(e) => setFormData({ ...formData, state_name: e.target.value })}
-                  required
-                  placeholder="e.g. MAHARASHTRA"
-                />
-              </div>
-
-              {/* Constituency */}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
-                  PARLIAMENTARY CONSTITUENCY *
-                </label>
-                <input
-                  type="text"
-                  className="search-input"
-                  value={formData.constituency_name}
-                  onChange={(e) => setFormData({ ...formData, constituency_name: e.target.value })}
-                  required
-                  placeholder="e.g. PUNE"
-                />
-              </div>
-
-              {/* MP Name */}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
-                  HON'BLE MP NAME *
-                </label>
-                <input
-                  type="text"
-                  className="search-input"
-                  value={formData.mp_name}
-                  onChange={(e) => setFormData({ ...formData, mp_name: e.target.value })}
-                  required
-                  placeholder="e.g. DR. SANJEEV KUMAR"
-                />
-              </div>
-
-              {/* Work Category */}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
-                  WORK CATEGORY *
-                </label>
-                <select
-                  className="search-input"
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                >
-                  {CATEGORIES.map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Location Type */}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
-                  LOCATION TYPE *
-                </label>
-                <select
-                  className="search-input"
-                  value={formData.location_type}
-                  onChange={(e) => setFormData({ ...formData, location_type: e.target.value })}
-                >
-                  <option value="Rural">Rural</option>
-                  <option value="Urban">Urban</option>
-                  <option value="Semi-Urban">Semi-Urban</option>
-                </select>
-              </div>
-
-              {/* City / Block / Village */}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
-                  BLOCK / TALUKA & VILLAGE
-                </label>
-                <input
-                  type="text"
-                  className="search-input"
-                  value={formData.block_name}
-                  onChange={(e) => setFormData({ ...formData, block_name: e.target.value })}
-                  placeholder="e.g. Haveli Block"
-                />
-              </div>
-
-              {/* Implementing District Authority (IDA) */}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
-                  IMPLEMENTING DISTRICT AUTHORITY (IDA) *
-                </label>
-                <input
-                  type="text"
-                  className="search-input"
-                  value={formData.ida_name}
-                  onChange={(e) => setFormData({ ...formData, ida_name: e.target.value })}
-                  required
-                  placeholder="e.g. District Collectorate & Magistrate"
-                />
-              </div>
-
-              {/* Allocated Amount */}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
-                  SANCTIONED / ALLOCATED AMOUNT (₹) *
-                </label>
-                <input
-                  type="number"
-                  className="search-input"
-                  value={formData.allocated_amount}
-                  onChange={(e) => setFormData({ ...formData, allocated_amount: parseFloat(e.target.value) || 0 })}
-                  required
-                  min="1000"
-                />
-              </div>
-
-              {/* Expenditure Amount */}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
-                  CURRENT RECORDED EXPENDITURE (₹)
-                </label>
-                <input
-                  type="number"
-                  className="search-input"
-                  value={formData.expenditure_amt}
-                  onChange={(e) => setFormData({ ...formData, expenditure_amt: parseFloat(e.target.value) || 0 })}
-                  min="0"
-                />
-              </div>
-
-              {/* Work Status */}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
-                  WORK STATUS *
-                </label>
-                <select
-                  className="search-input"
-                  value={formData.work_status}
-                  onChange={(e) => setFormData({ ...formData, work_status: e.target.value })}
-                >
-                  <option value="On Going">On Going (Sanctioned & In Progress)</option>
-                  <option value="Completed">Completed (Final MB Cleared)</option>
-                  <option value="Unsanctioned">Unsanctioned (Recommended only)</option>
-                </select>
-              </div>
-
-              {/* Recommendation Date */}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
-                  RECOMMENDATION DATE *
-                </label>
-                <input
-                  type="date"
-                  className="search-input"
-                  value={formData.recommended_date}
-                  onChange={(e) => setFormData({ ...formData, recommended_date: e.target.value })}
-                  required
-                />
-              </div>
-
-              {/* Sanction Letter No */}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
-                  SANCTION LETTER / DOCKET NO
-                </label>
-                <input
-                  type="text"
-                  className="search-input"
-                  placeholder="e.g. MPLADS/PUN/2024/008"
-                  value={formData.letter_no}
-                  onChange={(e) => setFormData({ ...formData, letter_no: e.target.value })}
-                />
-              </div>
-
-              {/* Verification Declaration */}
-              <div style={{ gridColumn: '1 / -1', marginTop: '0.5rem' }}>
-                <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', cursor: 'pointer', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-                  <input
-                    type="checkbox"
-                    checked={formData.officer_verified}
-                    onChange={(e) => setFormData({ ...formData, officer_verified: e.target.checked })}
-                    required
-                    style={{ marginTop: '0.2rem' }}
-                  />
-                  <span>
-                    I confirm as an authorized Government Officer ({officerInfo.officerId}) that the submitted MPLADS work details have been cross-checked with the official Sanction Order and District Authority records.
-                  </span>
-                </label>
-              </div>
-
-              {/* Submit Button */}
-              <div style={{ gridColumn: '1 / -1', marginTop: '0.75rem' }}>
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  disabled={submitting || !formData.officer_verified}
-                  style={{ fontSize: '0.92rem', padding: '0.75rem 2rem' }}
-                >
-                  {submitting ? <RefreshCw size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <ShieldCheck size={18} />}
-                  <span>{submitting ? 'Running Multi-Tier Anomaly Engine…' : 'Register Project & Execute Risk Scoring'}</span>
-                </button>
-              </div>
-            </form>
-
-            {/* Submit Error */}
-            {submitError && (
-              <div style={{ marginTop: '1rem', padding: '0.85rem 1rem', borderRadius: 8, background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)' }}>
-                <strong>Registration Error:</strong> {submitError}
-              </div>
-            )}
-
-            {/* Ingestion & Assessment Result */}
-            {submitResult && (
-              <div
-                style={{
-                  marginTop: '1.5rem',
-                  padding: '1.5rem',
-                  borderRadius: 10,
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(56, 189, 248, 0.3)',
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
+          {/* ──────────────────────────────────────────────────────────────────────── */}
+          {/* TAB 1: EXCEL / CSV BATCH WORK INGESTION                                  */}
+          {/* ──────────────────────────────────────────────────────────────────────── */}
+          {activeTab === 'excel' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              {/* Upload Card */}
+              <div className="card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.25rem' }}>
                   <div>
-                    <span style={{ fontSize: '0.72rem', color: 'var(--accent-teal)', textTransform: 'uppercase', fontWeight: 800 }}>
-                      <CheckCircle2 size={13} style={{ display: 'inline', marginRight: 4 }} />
-                      SUCCESSFULLY REGISTERED IN NATIONAL STORE
-                    </span>
-                    <h3 style={{ fontSize: '1.3rem', fontWeight: 800, margin: '0.2rem 0' }}>
-                      Project #{submitResult.project.project_id} — {submitResult.project.mp_name}
-                    </h3>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem' }}>
+                      <FileSpreadsheet size={22} color="var(--accent-blue)" />
+                      <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>
+                        Official MPLADS Excel / CSV Batch Work Ingestion
+                      </h2>
+                    </div>
                     <div style={{ fontSize: '0.84rem', color: 'var(--text-secondary)' }}>
-                      {submitResult.project.state_name} • {submitResult.project.constituency_name} ({submitResult.project.work_status})
+                      Upload an official spreadsheet to register hundreds of constituency works at once. The AI audit engine processes all rows instantaneously.
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>COMPOSITE RISK SCORE</div>
-                      <div style={{ fontSize: '1.6rem', fontWeight: 900, color: submitResult.overall_risk_score >= 50 ? 'var(--risk-critical)' : 'var(--risk-low)' }}>
-                        {submitResult.overall_risk_score} / 100
-                      </div>
-                    </div>
-                    <RiskBadge band={submitResult.risk_band} score={submitResult.overall_risk_score} />
-                  </div>
+                  <button
+                    className="btn btn-ghost"
+                    onClick={handleDownloadTemplate}
+                    style={{ borderColor: 'rgba(56, 189, 248, 0.4)', color: '#38bdf8', padding: '0.6rem 1.25rem' }}
+                  >
+                    <Download size={16} />
+                    <span>Download Official Excel Template (.csv)</span>
+                  </button>
                 </div>
 
-                {submitResult.anomalies_detected && submitResult.anomalies_detected.length > 0 ? (
-                  <div style={{ marginBottom: '1.25rem' }}>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--risk-critical)', marginBottom: '0.4rem' }}>
-                      ⚠️ Triggered Audit Indicators ({submitResult.anomalies_detected.length}):
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                      {submitResult.anomalies_detected.map((a: any, idx: number) => (
-                        <div
-                          key={idx}
-                          style={{
-                            padding: '0.6rem 0.85rem',
-                            borderRadius: 6,
-                            background: 'rgba(239, 68, 68, 0.08)',
-                            border: '1px solid rgba(239, 68, 68, 0.2)',
-                            fontSize: '0.82rem',
-                          }}
-                        >
-                          <strong>{a.rule_name}</strong> ({a.severity}) — {a.explanation}
-                        </div>
-                      ))}
-                    </div>
+                {/* Drag-and-drop upload box */}
+                <div
+                  style={{
+                    border: '2px dashed rgba(56, 189, 248, 0.35)',
+                    borderRadius: 12,
+                    background: 'rgba(15, 23, 42, 0.6)',
+                    padding: '2.5rem 1.5rem',
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    marginBottom: '1.5rem',
+                  }}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".xlsx, .xls, .csv"
+                    style={{ display: 'none' }}
+                    onChange={handleFileChange}
+                  />
+                  <div
+                    style={{
+                      width: 54,
+                      height: 54,
+                      borderRadius: '50%',
+                      background: 'rgba(56, 189, 248, 0.1)',
+                      color: 'var(--accent-blue)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginBottom: '0.75rem',
+                    }}
+                  >
+                    <UploadCloud size={28} />
                   </div>
-                ) : (
-                  <div style={{ marginBottom: '1.25rem', padding: '0.6rem 0.85rem', borderRadius: 6, background: 'rgba(34, 197, 94, 0.08)', color: '#22c55e', fontSize: '0.82rem' }}>
-                    ✓ No deterministic rule violations triggered. Work complies with standard scheme metrics.
+                  <div style={{ fontWeight: 800, fontSize: '1.05rem', color: '#f8fafc', marginBottom: '0.25rem' }}>
+                    {selectedFile ? `Selected: ${selectedFile.name}` : 'Click or Drag & Drop Excel / CSV Spreadsheet Here'}
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                    Supported formats: Microsoft Excel (.xlsx, .xls) and Comma-Separated Values (.csv)
+                  </div>
+                  {selectedFile && (
+                    <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: 'var(--accent-teal)', fontWeight: 700 }}>
+                      File size: {(selectedFile.size / 1024).toFixed(1)} KB • Ready for Ingestion
+                    </div>
+                  )}
+                </div>
+
+                {/* Live Preview Table of First 5 Rows if CSV */}
+                {previewRows.length > 0 && (
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.4rem' }}>
+                      Spreadsheet Preview (First {previewRows.length} Rows):
+                    </div>
+                    <div className="data-table-wrapper" style={{ maxHeight: 180, overflowY: 'auto' }}>
+                      <table className="data-table" style={{ fontSize: '0.75rem' }}>
+                        <thead>
+                          <tr>
+                            <th>House</th>
+                            <th>State</th>
+                            <th>Constituency</th>
+                            <th>Hon'ble MP</th>
+                            <th>Category</th>
+                            <th>Allocated</th>
+                            <th>Expenditure</th>
+                            <th>Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {previewRows.map((row, idx) => (
+                            <tr key={idx}>
+                              <td>{row.house_type || row.House_Type || 'LOK'}</td>
+                              <td>{row.state_name || row.State || '-'}</td>
+                              <td>{row.constituency_name || row.Constituency || '-'}</td>
+                              <td>{row.mp_name || row.MP_Name || '-'}</td>
+                              <td>{row.category || row.Category || '-'}</td>
+                              <td className="amount">₹{Number(row.allocated_amount || row.Sanctioned_Amount || 0).toLocaleString()}</td>
+                              <td className="amount">₹{Number(row.expenditure_amt || row.Expenditure || 0).toLocaleString()}</td>
+                              <td>{row.work_status || row.Status || 'On Going'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 )}
 
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                {/* Action Buttons */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                    Officer Declaration: All data in the uploaded sheet must reflect official Sanction Orders.
+                  </div>
                   <button
-                    type="button"
                     className="btn btn-primary"
-                    style={{ fontSize: '0.85rem', padding: '0.5rem 1.25rem' }}
-                    onClick={() => navigate(`/projects/${submitResult.project.project_id}`)}
+                    disabled={!selectedFile || uploading}
+                    onClick={handleUploadExcel}
+                    style={{ padding: '0.75rem 2rem', fontSize: '0.92rem' }}
                   >
-                    <span>Open Detailed Audit Inspection Dossier</span>
-                    <ArrowRight size={15} />
+                    {uploading ? <RefreshCw size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <ShieldCheck size={18} />}
+                    <span>{uploading ? 'Parsing & Running 11-Rule AI Audit…' : 'Ingest Spreadsheet & Score All Works'}</span>
                   </button>
-                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                    Project record is now indexed across National Overview, High-Risk Queue, and State Diagnostics.
-                  </span>
+                </div>
+
+                {/* Upload Error */}
+                {uploadError && (
+                  <div style={{ marginTop: '1rem', padding: '0.85rem 1rem', borderRadius: 8, background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', fontSize: '0.85rem' }}>
+                    <strong>Upload Error:</strong> {uploadError}
+                  </div>
+                )}
+              </div>
+
+              {/* Upload Success Results Card */}
+              {uploadResult && (
+                <div
+                  className="card"
+                  style={{
+                    border: '1px solid rgba(34, 197, 94, 0.4)',
+                    background: 'linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(15, 30, 25, 0.9))',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '1rem' }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#22c55e', fontSize: '0.78rem', fontWeight: 800, textTransform: 'uppercase' }}>
+                        <CheckCircle2 size={16} />
+                        BATCH INGESTION COMPLETED SUCCESSFULLY
+                      </div>
+                      <h3 style={{ fontSize: '1.35rem', fontWeight: 900, margin: '0.2rem 0' }}>
+                        {uploadResult.total_uploaded} MPLADS Works Ingested into National Surveillance
+                      </h3>
+                      <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                        {uploadResult.message}
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '1rem' }}>
+                      <div className="kpi-tile" style={{ padding: '0.75rem 1.25rem', minWidth: 140 }}>
+                        <div className="kpi-label">Works Flagged</div>
+                        <div className="kpi-value small" style={{ color: uploadResult.high_risk_count > 0 ? 'var(--risk-critical)' : 'var(--risk-low)' }}>
+                          {uploadResult.high_risk_count}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Summary Table of Ingested Projects */}
+                  <div className="data-table-wrapper">
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th>ID</th>
+                          <th>Location</th>
+                          <th>Hon'ble MP</th>
+                          <th>Allocated</th>
+                          <th>Disbursed</th>
+                          <th>Status</th>
+                          <th>Risk Band</th>
+                          <th>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(uploadResult.projects || []).slice(0, 10).map((p: any) => (
+                          <tr key={p.project_id}>
+                            <td><strong>#{p.project_id}</strong></td>
+                            <td>
+                              <div>{p.state_name}</div>
+                              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{p.constituency_name}</div>
+                            </td>
+                            <td>{p.mp_name}</td>
+                            <td className="amount">₹{(p.allocated_amount || 0).toLocaleString()}</td>
+                            <td className="amount">{p.expenditure_amt ? `₹${p.expenditure_amt.toLocaleString()}` : '₹0'}</td>
+                            <td>
+                              <span style={{ fontSize: '0.75rem', textTransform: 'capitalize' }}>
+                                {p.work_status?.toLowerCase()}
+                              </span>
+                            </td>
+                            <td>
+                              <RiskBadge band={p.risk_band} score={p.overall_risk_score} />
+                            </td>
+                            <td>
+                              <button
+                                className="btn btn-ghost"
+                                style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem' }}
+                                onClick={() => navigate(`/projects/${p.project_id}`)}
+                              >
+                                Audit
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {uploadResult.projects && uploadResult.projects.length > 10 && (
+                    <div style={{ marginTop: '0.75rem', textAlign: 'center', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                      Showing first 10 projects. All {uploadResult.total_uploaded} projects are now active across the High-Risk Queue and National Overview.
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Predefined Columns Specification Guide */}
+              <div className="card">
+                <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Table size={18} color="var(--accent-teal)" />
+                  <span>Predefined Excel Column Format &amp; Schema Specification</span>
+                </div>
+                <div style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', marginBottom: '1rem', lineHeight: 1.5 }}>
+                  The uploaded Excel sheet must contain the following columns (headers are case-insensitive and spaces/underscores are automatically mapped):
+                </div>
+
+                <div className="data-table-wrapper">
+                  <table className="data-table" style={{ fontSize: '0.8rem' }}>
+                    <thead>
+                      <tr>
+                        <th>Column Name</th>
+                        <th>Required?</th>
+                        <th>Example Value</th>
+                        <th>Description &amp; Guidelines</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {PREDEFINED_COLUMNS.map((col) => (
+                        <tr key={col.name}>
+                          <td>
+                            <code style={{ color: 'var(--text-accent)', fontWeight: 700 }}>{col.name}</code>
+                          </td>
+                          <td>
+                            {col.required ? (
+                              <span style={{ color: 'var(--risk-critical)', fontWeight: 800, fontSize: '0.72rem' }}>REQUIRED</span>
+                            ) : (
+                              <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>OPTIONAL</span>
+                            )}
+                          </td>
+                          <td>
+                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>{col.example}</span>
+                          </td>
+                          <td style={{ color: 'var(--text-secondary)' }}>{col.desc}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
+
+          {/* ──────────────────────────────────────────────────────────────────────── */}
+          {/* TAB 2: SINGLE WORK ENTRY FORM                                            */}
+          {/* ──────────────────────────────────────────────────────────────────────── */}
+          {activeTab === 'single' && (
+            <div className="card">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem' }}>
+                <FilePlus2 size={22} color="var(--accent-blue)" />
+                <div className="card-title" style={{ margin: 0 }}>
+                  Single Project Registration &amp; Instant Risk Scoring
+                </div>
+              </div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '0.84rem', marginBottom: '1.5rem' }}>
+                Register one project at a time matching the signed Sanction Order.
+              </div>
+
+              <form onSubmit={handleSubmitProject} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem' }}>
+                {/* House Type */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                    PARLIAMENTARY HOUSE *
+                  </label>
+                  <select
+                    className="search-input"
+                    value={formData.house_type}
+                    onChange={(e) => setFormData({ ...formData, house_type: e.target.value })}
+                    required
+                  >
+                    <option value="LOK">Lok Sabha (House of the People)</option>
+                    <option value="RAJYA">Rajya Sabha (Council of States)</option>
+                  </select>
+                </div>
+
+                {/* State */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                    STATE / UT *
+                  </label>
+                  <input
+                    type="text"
+                    className="search-input"
+                    value={formData.state_name}
+                    onChange={(e) => setFormData({ ...formData, state_name: e.target.value })}
+                    required
+                    placeholder="e.g. MAHARASHTRA"
+                  />
+                </div>
+
+                {/* Constituency */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                    PARLIAMENTARY CONSTITUENCY *
+                  </label>
+                  <input
+                    type="text"
+                    className="search-input"
+                    value={formData.constituency_name}
+                    onChange={(e) => setFormData({ ...formData, constituency_name: e.target.value })}
+                    required
+                    placeholder="e.g. PUNE"
+                  />
+                </div>
+
+                {/* MP Name */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                    HON'BLE MP NAME *
+                  </label>
+                  <input
+                    type="text"
+                    className="search-input"
+                    value={formData.mp_name}
+                    onChange={(e) => setFormData({ ...formData, mp_name: e.target.value })}
+                    required
+                    placeholder="e.g. DR. SANJEEV KUMAR"
+                  />
+                </div>
+
+                {/* Work Category */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                    WORK CATEGORY *
+                  </label>
+                  <select
+                    className="search-input"
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  >
+                    {CATEGORIES.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Location Type */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                    LOCATION TYPE *
+                  </label>
+                  <select
+                    className="search-input"
+                    value={formData.location_type}
+                    onChange={(e) => setFormData({ ...formData, location_type: e.target.value })}
+                  >
+                    <option value="Rural">Rural</option>
+                    <option value="Urban">Urban</option>
+                    <option value="Semi-Urban">Semi-Urban</option>
+                  </select>
+                </div>
+
+                {/* City / Block / Village */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                    BLOCK / TALUKA &amp; VILLAGE
+                  </label>
+                  <input
+                    type="text"
+                    className="search-input"
+                    value={formData.block_name}
+                    onChange={(e) => setFormData({ ...formData, block_name: e.target.value })}
+                    placeholder="e.g. Haveli Block"
+                  />
+                </div>
+
+                {/* Implementing District Authority (IDA) */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                    IMPLEMENTING DISTRICT AUTHORITY (IDA) *
+                  </label>
+                  <input
+                    type="text"
+                    className="search-input"
+                    value={formData.ida_name}
+                    onChange={(e) => setFormData({ ...formData, ida_name: e.target.value })}
+                    required
+                    placeholder="e.g. District Collectorate &amp; Magistrate"
+                  />
+                </div>
+
+                {/* Allocated Amount */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                    SANCTIONED / ALLOCATED AMOUNT (₹) *
+                  </label>
+                  <input
+                    type="number"
+                    className="search-input"
+                    value={formData.allocated_amount}
+                    onChange={(e) => setFormData({ ...formData, allocated_amount: parseFloat(e.target.value) || 0 })}
+                    required
+                    min="1000"
+                  />
+                </div>
+
+                {/* Expenditure Amount */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                    CURRENT RECORDED EXPENDITURE (₹)
+                  </label>
+                  <input
+                    type="number"
+                    className="search-input"
+                    value={formData.expenditure_amt}
+                    onChange={(e) => setFormData({ ...formData, expenditure_amt: parseFloat(e.target.value) || 0 })}
+                    min="0"
+                  />
+                </div>
+
+                {/* Work Status */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                    WORK STATUS *
+                  </label>
+                  <select
+                    className="search-input"
+                    value={formData.work_status}
+                    onChange={(e) => setFormData({ ...formData, work_status: e.target.value })}
+                  >
+                    <option value="On Going">On Going (Sanctioned &amp; In Progress)</option>
+                    <option value="Completed">Completed (Final MB Cleared)</option>
+                    <option value="Unsanctioned">Unsanctioned (Recommended only)</option>
+                  </select>
+                </div>
+
+                {/* Recommendation Date */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                    RECOMMENDATION DATE *
+                  </label>
+                  <input
+                    type="date"
+                    className="search-input"
+                    value={formData.recommended_date}
+                    onChange={(e) => setFormData({ ...formData, recommended_date: e.target.value })}
+                    required
+                  />
+                </div>
+
+                {/* Sanction Letter No */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                    SANCTION LETTER / DOCKET NO
+                  </label>
+                  <input
+                    type="text"
+                    className="search-input"
+                    placeholder="e.g. MPLADS/PUN/2024/008"
+                    value={formData.letter_no}
+                    onChange={(e) => setFormData({ ...formData, letter_no: e.target.value })}
+                  />
+                </div>
+
+                {/* Verification Declaration */}
+                <div style={{ gridColumn: '1 / -1', marginTop: '0.5rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', cursor: 'pointer', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                    <input
+                      type="checkbox"
+                      checked={formData.officer_verified}
+                      onChange={(e) => setFormData({ ...formData, officer_verified: e.target.checked })}
+                      required
+                      style={{ marginTop: '0.2rem' }}
+                    />
+                    <span>
+                      I confirm as an authorized Government Officer ({officerInfo.officerId}) that the submitted MPLADS work details have been cross-checked with the official Sanction Order and District Authority records.
+                    </span>
+                  </label>
+                </div>
+
+                {/* Submit Button */}
+                <div style={{ gridColumn: '1 / -1', marginTop: '0.75rem' }}>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={submitting || !formData.officer_verified}
+                    style={{ fontSize: '0.92rem', padding: '0.75rem 2rem' }}
+                  >
+                    {submitting ? <RefreshCw size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <ShieldCheck size={18} />}
+                    <span>{submitting ? 'Running Multi-Tier Anomaly Engine…' : 'Register Project &amp; Execute Risk Scoring'}</span>
+                  </button>
+                </div>
+              </form>
+
+              {/* Submit Error */}
+              {submitError && (
+                <div style={{ marginTop: '1rem', padding: '0.85rem 1rem', borderRadius: 8, background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)' }}>
+                  <strong>Registration Error:</strong> {submitError}
+                </div>
+              )}
+
+              {/* Ingestion & Assessment Result */}
+              {submitResult && (
+                <div
+                  style={{
+                    marginTop: '1.5rem',
+                    padding: '1.5rem',
+                    borderRadius: 10,
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid rgba(56, 189, 248, 0.3)',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
+                    <div>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--accent-teal)', textTransform: 'uppercase', fontWeight: 800 }}>
+                        <CheckCircle2 size={13} style={{ display: 'inline', marginRight: 4 }} />
+                        SUCCESSFULLY REGISTERED IN NATIONAL STORE
+                      </span>
+                      <h3 style={{ fontSize: '1.3rem', fontWeight: 800, margin: '0.2rem 0' }}>
+                        Project #{submitResult.project.project_id} — {submitResult.project.mp_name}
+                      </h3>
+                      <div style={{ fontSize: '0.84rem', color: 'var(--text-secondary)' }}>
+                        {submitResult.project.state_name} • {submitResult.project.constituency_name} ({submitResult.project.work_status})
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>COMPOSITE RISK SCORE</div>
+                        <div style={{ fontSize: '1.6rem', fontWeight: 900, color: submitResult.overall_risk_score >= 50 ? 'var(--risk-critical)' : 'var(--risk-low)' }}>
+                          {submitResult.overall_risk_score} / 100
+                        </div>
+                      </div>
+                      <RiskBadge band={submitResult.risk_band} score={submitResult.overall_risk_score} />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      style={{ fontSize: '0.85rem', padding: '0.5rem 1.25rem' }}
+                      onClick={() => navigate(`/projects/${submitResult.project.project_id}`)}
+                    >
+                      <span>Open Detailed Audit Inspection Dossier</span>
+                      <ArrowRight size={15} />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
