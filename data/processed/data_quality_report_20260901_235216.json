@@ -1,0 +1,287 @@
+{
+  "LOK_Allocated_Limit": {
+    "dataset": "LOK_Allocated_Limit",
+    "timestamp": "2026-09-01T23:52:16.428521",
+    "total_records": 543,
+    "duplicate_records": 0,
+    "missing_pct": {
+      "STATE_NAME": 0.0,
+      "CONSTITUENCY_NAME": 0.0,
+      "MP_NAME": 0.0,
+      "ALLOCATED_AMOUNT": 0.0,
+      "HOUSE_NAME": 0.0
+    },
+    "invalid_amounts": {},
+    "invalid_dates": {},
+    "value_stats": {
+      "unique_states": 16,
+      "unique_mps": 543
+    },
+    "issues": [],
+    "issue_count": 0,
+    "error_count": 0,
+    "warning_count": 0
+  },
+  "RAJYA_Allocated_Limit": {
+    "dataset": "RAJYA_Allocated_Limit",
+    "timestamp": "2026-09-01T23:52:16.442433",
+    "total_records": 30,
+    "duplicate_records": 0,
+    "missing_pct": {
+      "STATE_NAME": 0.0,
+      "CONSTITUENCY_NAME": 0.0,
+      "MP_NAME": 0.0,
+      "ALLOCATED_AMOUNT": 0.0,
+      "HOUSE_NAME": 0.0
+    },
+    "invalid_amounts": {},
+    "invalid_dates": {},
+    "value_stats": {
+      "unique_states": 16,
+      "unique_mps": 30
+    },
+    "issues": [],
+    "issue_count": 0,
+    "error_count": 0,
+    "warning_count": 0
+  },
+  "LOK_Completed": {
+    "dataset": "LOK_Completed",
+    "timestamp": "2026-09-01T23:52:16.450368",
+    "total_records": 2579,
+    "duplicate_records": 1508,
+    "missing_pct": {
+      "HOUSE_NAME": 0.0,
+      "STATE_NAME": 0.0,
+      "CONSTITUENCY_NAME": 0.0,
+      "MP_NAME": 0.0,
+      "IDA_NAME": 0.0,
+      "CITY_NAME": 74.91,
+      "BLOCK_NAME": 25.09,
+      "VILLAGE_NAME": 25.09,
+      "LOCATION_TYPE": 0.0,
+      "WORK_STATUS": 0.0,
+      "RECOMMENDATION_DATE": 0.0,
+      "RECOMMENDED_AMOUNT": 0.0,
+      "FRESH_LIMIT": 0.0,
+      "EXPENDITURE_AMT": 0.0,
+      "ACTUAL_END_DATE": 0.0,
+      "LETTER_NO": 0.0
+    },
+    "invalid_amounts": {},
+    "invalid_dates": {},
+    "value_stats": {
+      "unique_states": 16,
+      "unique_mps": 1050
+    },
+    "issues": [
+      {
+        "severity": "WARNING",
+        "field": "CITY_NAME",
+        "description": "74.9% missing values",
+        "count": 0
+      },
+      {
+        "severity": "INFO",
+        "field": "BLOCK_NAME",
+        "description": "25.1% missing values",
+        "count": 647
+      },
+      {
+        "severity": "INFO",
+        "field": "VILLAGE_NAME",
+        "description": "25.1% missing values",
+        "count": 647
+      },
+      {
+        "severity": "WARNING",
+        "field": "duplicates",
+        "description": "1508 duplicate records (58.5%)",
+        "count": 1508
+      }
+    ],
+    "issue_count": 4,
+    "error_count": 0,
+    "warning_count": 2
+  },
+  "LOK_On_Going": {
+    "dataset": "LOK_On_Going",
+    "timestamp": "2026-09-01T23:52:16.489927",
+    "total_records": 2232,
+    "duplicate_records": 1231,
+    "missing_pct": {
+      "HOUSE_NAME": 0.0,
+      "STATE_NAME": 0.0,
+      "CONSTITUENCY_NAME": 0.0,
+      "MP_NAME": 0.0,
+      "IDA_NAME": 0.0,
+      "CITY_NAME": 76.08,
+      "BLOCK_NAME": 23.92,
+      "VILLAGE_NAME": 23.92,
+      "LOCATION_TYPE": 0.0,
+      "WORK_STATUS": 0.0,
+      "RECOMMENDATION_DATE": 0.0,
+      "RECOMMENDED_AMOUNT": 0.0,
+      "FRESH_LIMIT": 0.0,
+      "EXPENDITURE_AMT": 0.0,
+      "ACTUAL_END_DATE": 100.0,
+      "LETTER_NO": 0.0
+    },
+    "invalid_amounts": {},
+    "invalid_dates": {},
+    "value_stats": {
+      "unique_states": 16,
+      "unique_mps": 986
+    },
+    "issues": [
+      {
+        "severity": "WARNING",
+        "field": "CITY_NAME",
+        "description": "76.1% missing values",
+        "count": 0
+      },
+      {
+        "severity": "INFO",
+        "field": "BLOCK_NAME",
+        "description": "23.9% missing values",
+        "count": 534
+      },
+      {
+        "severity": "INFO",
+        "field": "VILLAGE_NAME",
+        "description": "23.9% missing values",
+        "count": 534
+      },
+      {
+        "severity": "WARNING",
+        "field": "ACTUAL_END_DATE",
+        "description": "100.0% missing values",
+        "count": 0
+      },
+      {
+        "severity": "WARNING",
+        "field": "duplicates",
+        "description": "1231 duplicate records (55.2%)",
+        "count": 1231
+      }
+    ],
+    "issue_count": 5,
+    "error_count": 0,
+    "warning_count": 3
+  },
+  "LOK_Unsanctioned": {
+    "dataset": "LOK_Unsanctioned",
+    "timestamp": "2026-09-01T23:52:16.526589",
+    "total_records": 189,
+    "duplicate_records": 21,
+    "missing_pct": {
+      "HOUSE_NAME": 0.0,
+      "STATE_NAME": 0.0,
+      "CONSTITUENCY_NAME": 0.0,
+      "MP_NAME": 0.0,
+      "IDA_NAME": 0.0,
+      "CITY_NAME": 69.31,
+      "BLOCK_NAME": 30.69,
+      "VILLAGE_NAME": 30.69,
+      "LOCATION_TYPE": 0.0,
+      "WORK_STATUS": 0.0,
+      "RECOMMENDATION_DATE": 0.0,
+      "RECOMMENDED_AMOUNT": 0.0,
+      "FRESH_LIMIT": 0.0,
+      "EXPENDITURE_AMT": 60.32,
+      "ACTUAL_END_DATE": 100.0,
+      "LETTER_NO": 0.0
+    },
+    "invalid_amounts": {},
+    "invalid_dates": {},
+    "value_stats": {
+      "unique_states": 16,
+      "unique_mps": 166
+    },
+    "issues": [
+      {
+        "severity": "WARNING",
+        "field": "CITY_NAME",
+        "description": "69.3% missing values",
+        "count": 0
+      },
+      {
+        "severity": "INFO",
+        "field": "BLOCK_NAME",
+        "description": "30.7% missing values",
+        "count": 58
+      },
+      {
+        "severity": "INFO",
+        "field": "VILLAGE_NAME",
+        "description": "30.7% missing values",
+        "count": 58
+      },
+      {
+        "severity": "WARNING",
+        "field": "EXPENDITURE_AMT",
+        "description": "60.3% missing values",
+        "count": 0
+      },
+      {
+        "severity": "WARNING",
+        "field": "ACTUAL_END_DATE",
+        "description": "100.0% missing values",
+        "count": 0
+      },
+      {
+        "severity": "WARNING",
+        "field": "duplicates",
+        "description": "21 duplicate records (11.1%)",
+        "count": 21
+      }
+    ],
+    "issue_count": 6,
+    "error_count": 0,
+    "warning_count": 4
+  },
+  "LOK_Calamity": {
+    "dataset": "LOK_Calamity",
+    "timestamp": "2026-09-01T23:52:16.543294",
+    "total_records": 50,
+    "duplicate_records": 0,
+    "missing_pct": {
+      "CALAMITY_TYPE": 0.0,
+      "CALAMITY_NAME": 0.0,
+      "MP_NAME": 0.0,
+      "DATE_OF_CONSENT": 0.0,
+      "CONSENT_AMOUNT": 0.0
+    },
+    "invalid_amounts": {},
+    "invalid_dates": {},
+    "value_stats": {
+      "unique_mps": 49
+    },
+    "issues": [],
+    "issue_count": 0,
+    "error_count": 0,
+    "warning_count": 0
+  },
+  "RAJYA_Calamity": {
+    "dataset": "RAJYA_Calamity",
+    "timestamp": "2026-09-01T23:52:16.551772",
+    "total_records": 20,
+    "duplicate_records": 0,
+    "missing_pct": {
+      "CALAMITY_TYPE": 0.0,
+      "CALAMITY_NAME": 0.0,
+      "MP_NAME": 0.0,
+      "DATE_OF_CONSENT": 0.0,
+      "CONSENT_AMOUNT": 0.0
+    },
+    "invalid_amounts": {},
+    "invalid_dates": {},
+    "value_stats": {
+      "unique_mps": 20
+    },
+    "issues": [],
+    "issue_count": 0,
+    "error_count": 0,
+    "warning_count": 0
+  }
+}

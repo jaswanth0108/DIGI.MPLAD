@@ -1,0 +1,15 @@
+{
+  "type": "SYNTHETIC_DEMO_DATA",
+  "disclaimer": "All data is synthetic. Does not represent real MPLADS records.",
+  "timestamp": "20260902_123856",
+  "datasets": {
+    "LOK_Allocated_Limit": 543,
+    "RAJYA_Allocated_Limit": 30,
+    "LOK_Completed": 2578,
+    "LOK_On_Going": 2230,
+    "LOK_Unsanctioned": 192,
+    "LOK_Calamity": 50,
+    "RAJYA_Calamity": 20
+  },
+  "total_projects": 5000
+}

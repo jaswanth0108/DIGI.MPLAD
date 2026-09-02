@@ -1,0 +1,24 @@
+{
+  "model_type": "IsolationForest",
+  "version": "1.0.0",
+  "features": [
+    "allocated_amount_log",
+    "expenditure_ratio",
+    "project_age_days",
+    "amount_vs_district_pct",
+    "amount_vs_state_pct",
+    "mp_project_count"
+  ],
+  "feature_names": {
+    "allocated_amount_log": "Allocated Amount (log-scaled)",
+    "expenditure_ratio": "Expenditure / Allocation Ratio",
+    "project_age_days": "Project Age (days)",
+    "amount_vs_district_pct": "Amount vs District Median (%)",
+    "amount_vs_state_pct": "Amount vs State Median (%)",
+    "mp_project_count": "MP Total Project Count"
+  },
+  "timestamp": "20260902_124109",
+  "model_path": "C:\\Users\\Jaswanth N.V.S\\OneDrive\\Desktop\\Demo SIH\\mplads-monitor\\ml\\models\\isolation_forest_v1.0.0_20260902_124109.pkl",
+  "scaler_path": "C:\\Users\\Jaswanth N.V.S\\OneDrive\\Desktop\\Demo SIH\\mplads-monitor\\ml\\models\\scaler_v1.0.0_20260902_124109.pkl",
+  "disclaimer": "This model detects statistical anomalies in MPLADS project data. It is NOT a fraud detector. No labeled fraud data was used in training. All outputs are risk indicators requiring human verification."
+}

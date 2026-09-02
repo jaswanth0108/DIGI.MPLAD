@@ -1,0 +1,25 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
+COPY backend/requirements.txt ./requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY backend/ ./backend/
+COPY scripts/ ./scripts/
+COPY data/ ./data/
+COPY ml/ ./ml/
+
+# Set working directory to backend for imports
+WORKDIR /app/backend
+
+# Run pipeline first (generates demo data), then start API
+CMD ["sh", "-c", "python -m etl.pipeline --demo && python -m api.main"]

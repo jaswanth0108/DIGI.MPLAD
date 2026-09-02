@@ -1,0 +1,352 @@
+[
+  {
+    "CALAMITY_TYPE": "National Calamity",
+    "CALAMITY_NAME": "Cyclone Michaung 2023",
+    "MP_NAME": "HON'BLE MP DHARWAD 3",
+    "DATE_OF_CONSENT": "14-Apr-2026",
+    "CONSENT_AMOUNT": 18881819.35
+  },
+  {
+    "CALAMITY_TYPE": "State Calamity",
+    "CALAMITY_NAME": "Flood 2025 in Punjab",
+    "MP_NAME": "HON'BLE MP ANANDPUR 3",
+    "DATE_OF_CONSENT": "14-Sep-2025",
+    "CONSENT_AMOUNT": 18184498.62
+  },
+  {
+    "CALAMITY_TYPE": "National Calamity",
+    "CALAMITY_NAME": "Hailstorm 2024 in Rajasthan",
+    "MP_NAME": "HON'BLE MP BHAVNAGA 3",
+    "DATE_OF_CONSENT": "13-Jun-2025",
+    "CONSENT_AMOUNT": 13025890.46
+  },
+  {
+    "CALAMITY_TYPE": "National Calamity",
+    "CALAMITY_NAME": "Earthquake 2023 in Uttarakhand",
+    "MP_NAME": "HON'BLE MP KORAPUT 1",
+    "DATE_OF_CONSENT": "10-Sep-2023",
+    "CONSENT_AMOUNT": 12009604.92
+  },
+  {
+    "CALAMITY_TYPE": "National Calamity",
+    "CALAMITY_NAME": "Earthquake 2023 in Uttarakhand",
+    "MP_NAME": "HON'BLE MP KARNAL 3",
+    "DATE_OF_CONSENT": "04-Nov-2024",
+    "CONSENT_AMOUNT": 19340447.87
+  },
+  {
+    "CALAMITY_TYPE": "State Calamity",
+    "CALAMITY_NAME": "Hailstorm 2024 in Rajasthan",
+    "MP_NAME": "HON'BLE MP KALLAKUR 1",
+    "DATE_OF_CONSENT": "26-Jul-2025",
+    "CONSENT_AMOUNT": 10067703.72
+  },
+  {
+    "CALAMITY_TYPE": "State Calamity",
+    "CALAMITY_NAME": "Earthquake 2023 in Uttarakhand",
+    "MP_NAME": "HON'BLE MP KRISHNAN 2",
+    "DATE_OF_CONSENT": "26-Jun-2024",
+    "CONSENT_AMOUNT": 15355451.71
+  },
+  {
+    "CALAMITY_TYPE": "National Calamity",
+    "CALAMITY_NAME": "Cyclone Michaung 2023",
+    "MP_NAME": "HON'BLE MP PATNA SA 1",
+    "DATE_OF_CONSENT": "18-Jan-2024",
+    "CONSENT_AMOUNT": 16944198.35
+  },
+  {
+    "CALAMITY_TYPE": "National Calamity",
+    "CALAMITY_NAME": "Flood 2024 in Assam",
+    "MP_NAME": "HON'BLE MP BELLARY 1",
+    "DATE_OF_CONSENT": "09-Apr-2024",
+    "CONSENT_AMOUNT": 6452584.16
+  },
+  {
+    "CALAMITY_TYPE": "National Calamity",
+    "CALAMITY_NAME": "Flood 2023 in Bihar",
+    "MP_NAME": "HON'BLE MP JALORE 3",
+    "DATE_OF_CONSENT": "09-Dec-2024",
+    "CONSENT_AMOUNT": 14640130.5
+  },
+  {
+    "CALAMITY_TYPE": "National Calamity",
+    "CALAMITY_NAME": "Earthquake 2023 in Uttarakhand",
+    "MP_NAME": "HON'BLE MP NABARANG 3",
+    "DATE_OF_CONSENT": "04-Jul-2023",
+    "CONSENT_AMOUNT": 18731733.65
+  },
+  {
+    "CALAMITY_TYPE": "National Calamity",
+    "CALAMITY_NAME": "Flood 2024 in Assam",
+    "MP_NAME": "HON'BLE MP CHANDRAP 1",
+    "DATE_OF_CONSENT": "03-Oct-2025",
+    "CONSENT_AMOUNT": 17502714.62
+  },
+  {
+    "CALAMITY_TYPE": "State Calamity",
+    "CALAMITY_NAME": "Flood 2025 in Punjab",
+    "MP_NAME": "HON'BLE MP SIWAN 3",
+    "DATE_OF_CONSENT": "11-Mar-2025",
+    "CONSENT_AMOUNT": 13955851.65
+  },
+  {
+    "CALAMITY_TYPE": "National Calamity",
+    "CALAMITY_NAME": "Drought 2023 in Maharashtra",
+    "MP_NAME": "HON'BLE MP CHANDRAP 3",
+    "DATE_OF_CONSENT": "22-Dec-2023",
+    "CONSENT_AMOUNT": 14286322.05
+  },
+  {
+    "CALAMITY_TYPE": "National Calamity",
+    "CALAMITY_NAME": "Earthquake 2023 in Uttarakhand",
+    "MP_NAME": "HON'BLE MP ARAKU 1",
+    "DATE_OF_CONSENT": "30-Apr-2023",
+    "CONSENT_AMOUNT": 16162852.27
+  },
+  {
+    "CALAMITY_TYPE": "National Calamity",
+    "CALAMITY_NAME": "Flood 2025 in Punjab",
+    "MP_NAME": "HON'BLE MP PURULIA 2",
+    "DATE_OF_CONSENT": "06-May-2026",
+    "CONSENT_AMOUNT": 18333693.89
+  },
+  {
+    "CALAMITY_TYPE": "State Calamity",
+    "CALAMITY_NAME": "Drought 2023 in Maharashtra",
+    "MP_NAME": "HON'BLE MP WARANGAL 3",
+    "DATE_OF_CONSENT": "08-Sep-2023",
+    "CONSENT_AMOUNT": 18878063.03
+  },
+  {
+    "CALAMITY_TYPE": "National Calamity",
+    "CALAMITY_NAME": "Drought 2023 in Maharashtra",
+    "MP_NAME": "HON'BLE MP DINDORI 3",
+    "DATE_OF_CONSENT": "01-Jan-2024",
+    "CONSENT_AMOUNT": 7944522.0
+  },
+  {
+    "CALAMITY_TYPE": "State Calamity",
+    "CALAMITY_NAME": "Drought 2023 in Maharashtra",
+    "MP_NAME": "HON'BLE MP SONIPAT 2",
+    "DATE_OF_CONSENT": "03-Aug-2024",
+    "CONSENT_AMOUNT": 13190501.72
+  },
+  {
+    "CALAMITY_TYPE": "National Calamity",
+    "CALAMITY_NAME": "Flood 2023 in Bihar",
+    "MP_NAME": "HON'BLE MP UDUPI-CH 2",
+    "DATE_OF_CONSENT": "01-Aug-2024",
+    "CONSENT_AMOUNT": 13232240.16
+  },
+  {
+    "CALAMITY_TYPE": "National Calamity",
+    "CALAMITY_NAME": "Drought 2023 in Maharashtra",
+    "MP_NAME": "HON'BLE MP VIJAYAWA 1",
+    "DATE_OF_CONSENT": "09-May-2024",
+    "CONSENT_AMOUNT": 17458939.91
+  },
+  {
+    "CALAMITY_TYPE": "National Calamity",
+    "CALAMITY_NAME": "Flood 2025 in Punjab",
+    "MP_NAME": "HON'BLE MP ROHTAK 3",
+    "DATE_OF_CONSENT": "07-Jul-2025",
+    "CONSENT_AMOUNT": 6052373.79
+  },
+  {
+    "CALAMITY_TYPE": "State Calamity",
+    "CALAMITY_NAME": "Flood 2023 in Bihar",
+    "MP_NAME": "HON'BLE MP MALKAJGI 2",
+    "DATE_OF_CONSENT": "23-Aug-2026",
+    "CONSENT_AMOUNT": 9328258.88
+  },
+  {
+    "CALAMITY_TYPE": "State Calamity",
+    "CALAMITY_NAME": "Drought 2023 in Maharashtra",
+    "MP_NAME": "HON'BLE MP PALAKKAD 1",
+    "DATE_OF_CONSENT": "07-Nov-2023",
+    "CONSENT_AMOUNT": 12576858.04
+  },
+  {
+    "CALAMITY_TYPE": "State Calamity",
+    "CALAMITY_NAME": "Flood 2025 in Punjab",
+    "MP_NAME": "HON'BLE MP AHMEDNAG 2",
+    "DATE_OF_CONSENT": "04-Feb-2024",
+    "CONSENT_AMOUNT": 16981223.03
+  },
+  {
+    "CALAMITY_TYPE": "National Calamity",
+    "CALAMITY_NAME": "Flood 2025 in Punjab",
+    "MP_NAME": "HON'BLE MP FARRUKHA 1",
+    "DATE_OF_CONSENT": "30-Dec-2025",
+    "CONSENT_AMOUNT": 16148986.5
+  },
+  {
+    "CALAMITY_TYPE": "National Calamity",
+    "CALAMITY_NAME": "Flood 2025 in Punjab",
+    "MP_NAME": "HON'BLE MP SERAMPOR 3",
+    "DATE_OF_CONSENT": "27-Jan-2024",
+    "CONSENT_AMOUNT": 5628573.23
+  },
+  {
+    "CALAMITY_TYPE": "National Calamity",
+    "CALAMITY_NAME": "Flood 2023 in Bihar",
+    "MP_NAME": "HON'BLE MP ZAHIRABA 3",
+    "DATE_OF_CONSENT": "10-Dec-2025",
+    "CONSENT_AMOUNT": 7374647.29
+  },
+  {
+    "CALAMITY_TYPE": "State Calamity",
+    "CALAMITY_NAME": "Flood 2024 in Assam",
+    "MP_NAME": "HON'BLE MP TUMKUR 1",
+    "DATE_OF_CONSENT": "17-Sep-2025",
+    "CONSENT_AMOUNT": 12782486.7
+  },
+  {
+    "CALAMITY_TYPE": "State Calamity",
+    "CALAMITY_NAME": "Flood 2024 in Assam",
+    "MP_NAME": "HON'BLE MP CHEVELLA 3",
+    "DATE_OF_CONSENT": "10-Dec-2023",
+    "CONSENT_AMOUNT": 5088239.93
+  },
+  {
+    "CALAMITY_TYPE": "State Calamity",
+    "CALAMITY_NAME": "Cyclone Michaung 2023",
+    "MP_NAME": "HON'BLE MP MUNGER 2",
+    "DATE_OF_CONSENT": "23-Feb-2025",
+    "CONSENT_AMOUNT": 8722308.7
+  },
+  {
+    "CALAMITY_TYPE": "State Calamity",
+    "CALAMITY_NAME": "Flood 2023 in Bihar",
+    "MP_NAME": "HON'BLE MP BHAVNAGA 2",
+    "DATE_OF_CONSENT": "10-Jan-2026",
+    "CONSENT_AMOUNT": 12517539.11
+  },
+  {
+    "CALAMITY_TYPE": "State Calamity",
+    "CALAMITY_NAME": "Flood 2023 in Bihar",
+    "MP_NAME": "HON'BLE MP UJJAIN 3",
+    "DATE_OF_CONSENT": "13-Feb-2024",
+    "CONSENT_AMOUNT": 8227169.24
+  },
+  {
+    "CALAMITY_TYPE": "National Calamity",
+    "CALAMITY_NAME": "Flood 2023 in Bihar",
+    "MP_NAME": "HON'BLE MP KODAGU 3",
+    "DATE_OF_CONSENT": "23-Jul-2023",
+    "CONSENT_AMOUNT": 14044871.49
+  },
+  {
+    "CALAMITY_TYPE": "National Calamity",
+    "CALAMITY_NAME": "Flood 2023 in Bihar",
+    "MP_NAME": "HON'BLE MP PATHANAM 1",
+    "DATE_OF_CONSENT": "19-Nov-2024",
+    "CONSENT_AMOUNT": 14618526.61
+  },
+  {
+    "CALAMITY_TYPE": "National Calamity",
+    "CALAMITY_NAME": "Cyclone Michaung 2023",
+    "MP_NAME": "HON'BLE MP NABARANG 3",
+    "DATE_OF_CONSENT": "26-Dec-2024",
+    "CONSENT_AMOUNT": 18504097.73
+  },
+  {
+    "CALAMITY_TYPE": "National Calamity",
+    "CALAMITY_NAME": "Hailstorm 2024 in Rajasthan",
+    "MP_NAME": "HON'BLE MP VIJAYAWA 3",
+    "DATE_OF_CONSENT": "07-Dec-2024",
+    "CONSENT_AMOUNT": 7165088.88
+  },
+  {
+    "CALAMITY_TYPE": "State Calamity",
+    "CALAMITY_NAME": "Cyclone Michaung 2023",
+    "MP_NAME": "HON'BLE MP NAGARKUR 3",
+    "DATE_OF_CONSENT": "04-Nov-2023",
+    "CONSENT_AMOUNT": 5839847.69
+  },
+  {
+    "CALAMITY_TYPE": "State Calamity",
+    "CALAMITY_NAME": "Hailstorm 2024 in Rajasthan",
+    "MP_NAME": "HON'BLE MP PATIALA 1",
+    "DATE_OF_CONSENT": "22-May-2026",
+    "CONSENT_AMOUNT": 9401465.46
+  },
+  {
+    "CALAMITY_TYPE": "State Calamity",
+    "CALAMITY_NAME": "Hailstorm 2024 in Rajasthan",
+    "MP_NAME": "HON'BLE MP YAVATMAL 3",
+    "DATE_OF_CONSENT": "14-Nov-2025",
+    "CONSENT_AMOUNT": 16813463.43
+  },
+  {
+    "CALAMITY_TYPE": "State Calamity",
+    "CALAMITY_NAME": "Earthquake 2023 in Uttarakhand",
+    "MP_NAME": "HON'BLE MP BHIWANI- 3",
+    "DATE_OF_CONSENT": "28-Mar-2026",
+    "CONSENT_AMOUNT": 11568852.78
+  },
+  {
+    "CALAMITY_TYPE": "National Calamity",
+    "CALAMITY_NAME": "Flood 2024 in Assam",
+    "MP_NAME": "HON'BLE MP PRATAPGA 1",
+    "DATE_OF_CONSENT": "14-Mar-2024",
+    "CONSENT_AMOUNT": 16525905.83
+  },
+  {
+    "CALAMITY_TYPE": "National Calamity",
+    "CALAMITY_NAME": "Flood 2023 in Bihar",
+    "MP_NAME": "HON'BLE MP GAUHATI 3",
+    "DATE_OF_CONSENT": "09-Oct-2023",
+    "CONSENT_AMOUNT": 15327670.24
+  },
+  {
+    "CALAMITY_TYPE": "National Calamity",
+    "CALAMITY_NAME": "Drought 2023 in Maharashtra",
+    "MP_NAME": "HON'BLE MP BANASKAN 1",
+    "DATE_OF_CONSENT": "02-Feb-2024",
+    "CONSENT_AMOUNT": 10161285.62
+  },
+  {
+    "CALAMITY_TYPE": "State Calamity",
+    "CALAMITY_NAME": "Flood 2024 in Assam",
+    "MP_NAME": "HON'BLE MP GONDA 1",
+    "DATE_OF_CONSENT": "16-Oct-2023",
+    "CONSENT_AMOUNT": 6737072.26
+  },
+  {
+    "CALAMITY_TYPE": "State Calamity",
+    "CALAMITY_NAME": "Flood 2023 in Bihar",
+    "MP_NAME": "HON'BLE MP SIRSA 1",
+    "DATE_OF_CONSENT": "15-Jan-2025",
+    "CONSENT_AMOUNT": 18312009.22
+  },
+  {
+    "CALAMITY_TYPE": "State Calamity",
+    "CALAMITY_NAME": "Flood 2023 in Bihar",
+    "MP_NAME": "HON'BLE MP ANAKAPAL 2",
+    "DATE_OF_CONSENT": "16-Apr-2025",
+    "CONSENT_AMOUNT": 9114524.1
+  },
+  {
+    "CALAMITY_TYPE": "State Calamity",
+    "CALAMITY_NAME": "Flood 2025 in Punjab",
+    "MP_NAME": "HON'BLE MP NARASARA 1",
+    "DATE_OF_CONSENT": "15-Jul-2026",
+    "CONSENT_AMOUNT": 16108200.03
+  },
+  {
+    "CALAMITY_TYPE": "National Calamity",
+    "CALAMITY_NAME": "Flood 2024 in Assam",
+    "MP_NAME": "HON'BLE MP MUMBAI N 3",
+    "DATE_OF_CONSENT": "14-Dec-2023",
+    "CONSENT_AMOUNT": 17109421.12
+  },
+  {
+    "CALAMITY_TYPE": "National Calamity",
+    "CALAMITY_NAME": "Drought 2023 in Maharashtra",
+    "MP_NAME": "HON'BLE MP PANCHMAH 1",
+    "DATE_OF_CONSENT": "18-Sep-2025",
+    "CONSENT_AMOUNT": 13383580.73
+  }
+]
