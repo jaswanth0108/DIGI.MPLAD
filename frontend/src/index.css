@@ -468,24 +468,47 @@ a:hover { text-decoration: underline; }
   font-weight: 700;
 }
 
-/* ── Search Bar ─────────────────────────────────────────────────────────── */
+/* ── Search Bar & Inputs ─────────────────────────────────────────────────── */
 .search-bar {
   display: flex;
   gap: 0.75rem;
   margin-bottom: 1.5rem;
 }
 
-.search-input {
+.search-input,
+select.search-input,
+input.search-input,
+textarea.search-input {
   flex: 1;
   padding: 0.75rem 1.25rem;
-  background: var(--bg-glass);
-  border: 1px solid var(--border-card);
+  background-color: #0f172a !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
   border-radius: var(--radius-lg);
-  color: var(--text-primary);
+  color: #f1f5f9 !important;
   font-family: var(--font-sans);
   font-size: 0.9rem;
   outline: none;
   transition: all var(--transition-fast);
+}
+
+select,
+option,
+optgroup {
+  background-color: #0f172a !important;
+  color: #f1f5f9 !important;
+}
+
+select option {
+  background-color: #0f172a !important;
+  color: #f1f5f9 !important;
+  padding: 8px 12px;
+}
+
+select option:hover,
+select option:focus,
+select option:checked {
+  background-color: #1e293b !important;
+  color: #38bdf8 !important;
 }
 
 .search-input::placeholder {
@@ -493,8 +516,9 @@ a:hover { text-decoration: underline; }
 }
 
 .search-input:focus {
-  border-color: var(--accent-blue);
+  border-color: var(--accent-blue) !important;
   box-shadow: var(--shadow-glow-blue);
+  background-color: #111c35 !important;
 }
 
 /* ── Buttons ────────────────────────────────────────────────────────────── */

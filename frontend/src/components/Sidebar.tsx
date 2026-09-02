@@ -5,10 +5,10 @@ import {
   MapPin,
   AlertTriangle,
   Search,
-  Users,
   ShieldCheck,
   RefreshCw,
   FilePlus2,
+  BrainCircuit,
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
@@ -57,11 +57,11 @@ export const Sidebar: React.FC = () => {
         </NavLink>
 
         <NavLink
-          to="/mp-analytics"
+          to="/how-it-works"
           className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
         >
-          <Users size={18} />
-          <span>MP & Peer Analytics</span>
+          <BrainCircuit size={18} />
+          <span>How It Works</span>
         </NavLink>
 
         <div style={{ margin: '0.5rem 1rem', borderTop: '1px solid var(--border-subtle)' }} />
@@ -92,4 +92,3 @@ export const Sidebar: React.FC = () => {
     </aside>
   );
 };
-

@@ -15,13 +15,6 @@ import {
 import { api } from '../api';
 import { RiskBadge } from '../components/RiskBadge';
 
-const PRESET_DEMO_CREDENTIALS = {
-  officerId: 'MOSPI-AUDIT-2026',
-  pin: 'MOSPI@2026',
-  designation: 'Senior District Audit Officer (IDA)',
-  authority: 'Ministry of Statistics & Programme Implementation / Collectorate',
-};
-
 const CATEGORIES = [
   'Drinking Water & Sanitation',
   'Rural Roadways & Connectivity',
@@ -83,35 +76,29 @@ export const OfficerIngestion: React.FC = () => {
     e.preventDefault();
     setAuthError(null);
 
-    // Simple security validation: Officer ID must have at least 5 chars and PIN must be valid
-    if (!loginId.trim() || loginId.trim().length < 4) {
-      setAuthError('Please provide a valid Government Officer ID (min 4 characters).');
+    const cleanId = loginId.trim().toUpperCase();
+    if (!cleanId || cleanId.length < 4) {
+      setAuthError('Please enter a valid Government Officer ID (e.g. GOI-MOSPI-84920 or NIC-AP-0491).');
       return;
     }
 
-    if (loginPin !== 'MOSPI@2026' && loginPin !== 'admin123' && loginPin.length < 4) {
-      setAuthError('Invalid Security PIN. (Use demo PIN: MOSPI@2026)');
+    // Standard Government Security PIN requirement
+    if (loginPin !== 'MOSPI@GOV2026' && loginPin !== 'MOSPI@2026') {
+      setAuthError('Invalid Security Access PIN. Please verify with your Nodal Authority.');
       return;
     }
 
-    if (captchaAnswer.trim() !== '14' && captchaAnswer.trim() !== 'demo') {
-      setAuthError('Security Captcha verification failed. (7 + 7 = 14)');
+    if (captchaAnswer.trim() !== '14') {
+      setAuthError('Security Captcha calculation failed. (7 + 7 = 14)');
       return;
     }
 
     // Success Authentication
     sessionStorage.setItem('digi_mplad_officer_auth', 'true');
-    sessionStorage.setItem('digi_mplad_officer_id', loginId.toUpperCase());
+    sessionStorage.setItem('digi_mplad_officer_id', cleanId);
     sessionStorage.setItem('digi_mplad_officer_role', loginRole);
-    setOfficerInfo({ officerId: loginId.toUpperCase(), designation: loginRole });
+    setOfficerInfo({ officerId: cleanId, designation: loginRole });
     setIsAuthenticated(true);
-  };
-
-  const handleQuickDemoAuth = () => {
-    setLoginId(PRESET_DEMO_CREDENTIALS.officerId);
-    setLoginPin(PRESET_DEMO_CREDENTIALS.pin);
-    setLoginRole(PRESET_DEMO_CREDENTIALS.designation);
-    setCaptchaAnswer('14');
   };
 
   const handleLogout = () => {
@@ -162,9 +149,9 @@ export const OfficerIngestion: React.FC = () => {
 
       {!isAuthenticated ? (
         /* Security Clearance / Login Gate */
-        <div style={{ maxWidth: 650, margin: '2rem auto' }}>
-          <div className="card" style={{ border: '1px solid rgba(56, 189, 248, 0.3)', background: 'rgba(15, 23, 42, 0.95)', padding: '2rem' }}>
-            <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+        <div style={{ maxWidth: 580, margin: '2rem auto' }}>
+          <div className="card" style={{ border: '1px solid rgba(56, 189, 248, 0.3)', background: 'rgba(15, 23, 42, 0.95)', padding: '2.25rem' }}>
+            <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
               <div
                 style={{
                   width: 56,
@@ -181,11 +168,11 @@ export const OfficerIngestion: React.FC = () => {
               >
                 <Lock size={26} />
               </div>
-              <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                Government Officer Access Gate
+              <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                Government Officer Access Clearance
               </h2>
-              <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '0.3rem' }}>
-                RESTRICTED SYSTEM: Unauthorized project data creation is prohibited under IT Act 2000.
+              <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '0.35rem', lineHeight: 1.4 }}>
+                RESTRICTED GOVERNMENT PORTAL: Official credentials required. All unauthorized access attempts are logged under IT Act 2000.
               </div>
             </div>
 
@@ -209,25 +196,25 @@ export const OfficerIngestion: React.FC = () => {
               </div>
             )}
 
-            <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
                   OFFICER BADGE / GOVT ID *
                 </label>
                 <input
                   type="text"
                   className="search-input"
-                  placeholder="e.g. MOSPI-AUDIT-2026 or IDA-VISAKHA-01"
+                  placeholder="e.g. GOI-MOSPI-84920 or NIC-AP-0491"
                   value={loginId}
                   onChange={(e) => setLoginId(e.target.value)}
                   required
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: '1rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
-                    OFFICER DESIGNATION *
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                    OFFICIAL DESIGNATION *
                   </label>
                   <select
                     className="search-input"
@@ -235,15 +222,15 @@ export const OfficerIngestion: React.FC = () => {
                     onChange={(e) => setLoginRole(e.target.value)}
                   >
                     <option value="District Audit Officer (IDA)">District Audit Officer (IDA)</option>
-                    <option value="District Collector / Magistrate">District Collector / Magistrate</option>
+                    <option value="District Collector & Magistrate">District Collector & Magistrate</option>
                     <option value="MoSPI Programme Director">MoSPI Programme Director</option>
                     <option value="State Nodal Officer">State Nodal Officer</option>
-                    <option value="CAG Field Auditor">CAG Field Auditor</option>
+                    <option value="CAG Field Audit Officer">CAG Field Audit Officer</option>
                   </select>
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
                     SECURITY ACCESS PIN *
                   </label>
                   <input
@@ -258,59 +245,32 @@ export const OfficerIngestion: React.FC = () => {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
                   SECURITY VERIFICATION: What is 7 + 7 ? *
                 </label>
                 <input
                   type="text"
                   className="search-input"
-                  placeholder="Enter calculation result"
+                  placeholder="Enter numerical answer"
                   value={captchaAnswer}
                   onChange={(e) => setCaptchaAnswer(e.target.value)}
                   required
                 />
               </div>
 
-              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
-                <button type="submit" className="btn btn-primary" style={{ flex: 1, padding: '0.7rem' }}>
+              <div style={{ marginTop: '0.5rem' }}>
+                <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '0.75rem', justifyContent: 'center', fontSize: '0.9rem' }}>
                   <Unlock size={16} />
-                  <span>Verify Credentials & Enter Portal</span>
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-ghost"
-                  onClick={handleQuickDemoAuth}
-                  title="Auto-fills verified demo auditor credentials"
-                  style={{ fontSize: '0.78rem', whiteSpace: 'nowrap' }}
-                >
-                  Fill Demo Credentials
+                  <span>Verify Credentials & Enter Ingestion Portal</span>
                 </button>
               </div>
             </form>
-
-            <div
-              style={{
-                marginTop: '1.5rem',
-                padding: '0.75rem 1rem',
-                borderRadius: 6,
-                background: 'rgba(255,255,255,0.02)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                fontSize: '0.75rem',
-                color: 'var(--text-muted)',
-              }}
-            >
-              <div style={{ fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>
-                <ShieldCheck size={13} style={{ display: 'inline', marginRight: 4, color: 'var(--accent-teal)' }} />
-                Auditor Quick-Access Information:
-              </div>
-              Demo Badge ID: <code>MOSPI-AUDIT-2026</code> | PIN: <code>MOSPI@2026</code> | Captcha: <code>14</code>
-            </div>
           </div>
         </div>
       ) : (
         /* Authenticated Project Ingestion Section */
         <div>
-          {/* Officer Verification Badge */}
+          {/* Officer Verification Banner */}
           <div
             className="card"
             style={{
@@ -327,15 +287,15 @@ export const OfficerIngestion: React.FC = () => {
               <UserCheck size={24} color="#22c55e" />
               <div>
                 <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#22c55e' }}>
-                  AUTHENTICATED OFFICER SESSION ACTIVE
+                  AUTHENTICATED GOVERNMENT OFFICER CLEARANCE ACTIVE
                 </div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                  Officer: <strong>{officerInfo.officerId}</strong> • {officerInfo.designation}
+                  Officer ID: <strong>{officerInfo.officerId}</strong> • {officerInfo.designation}
                 </div>
               </div>
             </div>
             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textAlign: 'right' }}>
-              <div>Digital Audit Trail: <strong>ENABLED</strong></div>
+              <div>Digital Audit Trail: <strong>ACTIVE</strong></div>
               <div>Timestamp: {new Date().toLocaleTimeString()}</div>
             </div>
           </div>
@@ -345,17 +305,17 @@ export const OfficerIngestion: React.FC = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem' }}>
               <FilePlus2 size={22} color="var(--accent-blue)" />
               <div className="card-title" style={{ margin: 0 }}>
-                New MPLADS Project Registration & Risk Pre-Screening Form
+                Official MPLADS Work Registration & Risk Pre-Screening
               </div>
             </div>
             <div style={{ color: 'var(--text-secondary)', fontSize: '0.84rem', marginBottom: '1.5rem' }}>
-              All fields are validated against standard MoSPI eSAKSHI schema. Upon submission, the engine computes an instant multi-tier risk score and registers the work live into the national surveillance store.
+              Please enter official work details matching the signed Sanction Order. The system executes instantaneous rule evaluation (R001–R011) and registers the record directly into the national surveillance data store.
             </div>
 
             <form onSubmit={handleSubmitProject} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem' }}>
               {/* House Type */}
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
                   PARLIAMENTARY HOUSE *
                 </label>
                 <select
@@ -371,7 +331,7 @@ export const OfficerIngestion: React.FC = () => {
 
               {/* State */}
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
                   STATE / UT *
                 </label>
                 <input
@@ -386,7 +346,7 @@ export const OfficerIngestion: React.FC = () => {
 
               {/* Constituency */}
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
                   PARLIAMENTARY CONSTITUENCY *
                 </label>
                 <input
@@ -401,7 +361,7 @@ export const OfficerIngestion: React.FC = () => {
 
               {/* MP Name */}
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
                   HON'BLE MP NAME *
                 </label>
                 <input
@@ -414,9 +374,9 @@ export const OfficerIngestion: React.FC = () => {
                 />
               </div>
 
-              {/* Project Work Category */}
+              {/* Work Category */}
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
                   WORK CATEGORY *
                 </label>
                 <select
@@ -432,7 +392,7 @@ export const OfficerIngestion: React.FC = () => {
 
               {/* Location Type */}
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
                   LOCATION TYPE *
                 </label>
                 <select
@@ -448,7 +408,7 @@ export const OfficerIngestion: React.FC = () => {
 
               {/* City / Block / Village */}
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
                   BLOCK / TALUKA & VILLAGE
                 </label>
                 <input
@@ -462,7 +422,7 @@ export const OfficerIngestion: React.FC = () => {
 
               {/* Implementing District Authority (IDA) */}
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
                   IMPLEMENTING DISTRICT AUTHORITY (IDA) *
                 </label>
                 <input
@@ -477,7 +437,7 @@ export const OfficerIngestion: React.FC = () => {
 
               {/* Allocated Amount */}
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
                   SANCTIONED / ALLOCATED AMOUNT (₹) *
                 </label>
                 <input
@@ -492,7 +452,7 @@ export const OfficerIngestion: React.FC = () => {
 
               {/* Expenditure Amount */}
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
                   CURRENT RECORDED EXPENDITURE (₹)
                 </label>
                 <input
@@ -506,7 +466,7 @@ export const OfficerIngestion: React.FC = () => {
 
               {/* Work Status */}
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
                   WORK STATUS *
                 </label>
                 <select
@@ -522,7 +482,7 @@ export const OfficerIngestion: React.FC = () => {
 
               {/* Recommendation Date */}
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
                   RECOMMENDATION DATE *
                 </label>
                 <input
@@ -536,7 +496,7 @@ export const OfficerIngestion: React.FC = () => {
 
               {/* Sanction Letter No */}
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
                   SANCTION LETTER / DOCKET NO
                 </label>
                 <input
@@ -550,7 +510,7 @@ export const OfficerIngestion: React.FC = () => {
 
               {/* Verification Declaration */}
               <div style={{ gridColumn: '1 / -1', marginTop: '0.5rem' }}>
-                <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', cursor: 'pointer', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', cursor: 'pointer', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
                   <input
                     type="checkbox"
                     checked={formData.officer_verified}
@@ -660,7 +620,7 @@ export const OfficerIngestion: React.FC = () => {
                     <ArrowRight size={15} />
                   </button>
                   <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                    Project record is now indexed across National Overview, High-Risk Queue, and MP Analytics.
+                    Project record is now indexed across National Overview, High-Risk Queue, and State Diagnostics.
                   </span>
                 </div>
               </div>
