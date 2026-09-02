@@ -597,12 +597,19 @@ async def mp_analytics(mp_name: str):
 
 @app.get("/api/analytics/trends")
 async def analytics_trends():
-    """Time-based trend data (quarterly)."""
+    """Time-based trend data with citizen-friendly quarter names."""
     _ensure_data()
     df = store.master_df.copy()
 
     rec_dates = pd.to_datetime(df["recommended_date"], errors="coerce")
     df["quarter"] = rec_dates.dt.to_period("Q").astype(str)
+
+    quarter_names = {
+        "1": ("Jan–Mar", "January – March (Q1)"),
+        "2": ("Apr–Jun", "April – June (Q2)"),
+        "3": ("Jul–Sep", "July – September (Q3)"),
+        "4": ("Oct–Dec", "October – December (Q4)"),
+    }
 
     trends = []
     for period, group in df.groupby("quarter"):
@@ -610,8 +617,25 @@ async def analytics_trends():
             continue
         rec_amt = group["allocated_amount"].sum() or 0
         exp_amt = group["expenditure_amt"].sum() or 0
+        
+        # Parse year and quarter
+        period_str = str(period)
+        display_label = period_str
+        full_period = period_str
+        if "Q" in period_str:
+            parts = period_str.split("Q")
+            year = parts[0]
+            q_num = parts[1]
+            short_year = year[-2:] if len(year) == 4 else year
+            if q_num in quarter_names:
+                short_m, full_m = quarter_names[q_num]
+                display_label = f"{short_m} '{short_year}"
+                full_period = f"{full_m} {year}"
+
         trends.append({
-            "period": str(period),
+            "period": period_str,
+            "display_label": display_label,
+            "full_period": full_period,
             "projects_recommended": len(group),
             "projects_completed": int(group["is_completed"].sum()),
             "amount_recommended_crore": round(rec_amt / 1_00_00_000, 2),

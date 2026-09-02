@@ -104,7 +104,7 @@ export const AuditCase: React.FC = () => {
         {/* Anomaly Indicators */}
         <div style={{ marginBottom: '1.5rem' }}>
           <div style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
-            2. Detected Risk Indicators & Variance Flags
+            2. Detected Risk Indicators & Plain-English Explanation
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {auditCase.anomalies.map((a, i) => (
@@ -113,19 +113,24 @@ export const AuditCase: React.FC = () => {
                 style={{
                   background: 'rgba(255,255,255,0.02)',
                   border: '1px solid rgba(255,255,255,0.06)',
-                  padding: '0.85rem',
+                  padding: '1rem',
                   borderRadius: 6,
                 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <strong style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>{a.rule}</strong>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                  <strong style={{ fontSize: '0.9rem', color: '#f8fafc' }}>⚠️ {a.rule}</strong>
                   <span style={{ fontSize: '0.72rem', color: 'var(--risk-critical)', fontWeight: 700 }}>
-                    {a.severity}
+                    {a.severity} PRIORITY
                   </span>
                 </div>
-                <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '0.3rem' }}>
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)', lineHeight: 1.5, marginBottom: '0.35rem' }}>
                   {a.explanation}
                 </div>
+                {a.action_advice && (
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-accent)' }}>
+                    <strong>Action Step: </strong>{a.action_advice}
+                  </div>
+                )}
               </div>
             ))}
           </div>

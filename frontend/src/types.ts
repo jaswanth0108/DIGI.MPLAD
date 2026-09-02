@@ -58,6 +58,25 @@ export interface ProjectDetail extends ProjectSummary {
   ml_anomaly_score?: number;
   risk_flags?: any[];
   anomalies?: AnomalyResult[];
+  category?: string;
+  work_description?: string;
+}
+
+export interface RiskExplanation {
+  project_id: number;
+  overall_risk_score: number;
+  risk_band: 'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL' | string;
+  score_breakdown: {
+    financial?: number;
+    delay?: number;
+    expenditure?: number;
+    duplicate?: number;
+    peer_deviation?: number;
+    ml_anomaly?: number;
+  };
+  anomalies: any[];
+  narrative: string;
+  disclaimer: string;
 }
 
 export interface NationalOverviewData {
@@ -102,6 +121,7 @@ export interface AuditCaseData {
     rule?: string;
     severity?: string;
     explanation?: string;
+    action_advice?: string;
   }>;
   evidence: any;
   recommended_action: string;

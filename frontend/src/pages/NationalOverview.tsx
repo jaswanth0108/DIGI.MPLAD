@@ -131,23 +131,62 @@ export const NationalOverview: React.FC = () => {
       {/* Charts Row */}
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
         <div className="card">
-          <div className="card-title">Quarterly Sanction & Expenditure Trends (₹ Crores)</div>
+          <div className="card-title" style={{ marginBottom: '0.2rem' }}>
+            Government Sanctions vs Actual Spending (Every 3-Month Quarter)
+          </div>
+          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>
+            Comparing approved project budget against actual money spent on ground every 3 months
+          </div>
           <div style={{ height: 260 }}>
             {trends.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={trends} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <XAxis dataKey="period" stroke="var(--text-muted)" fontSize={11} />
+                <BarChart data={trends} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
+                  <XAxis
+                    dataKey="display_label"
+                    stroke="var(--text-muted)"
+                    fontSize={10}
+                    interval={0}
+                    angle={-25}
+                    textAnchor="end"
+                  />
                   <YAxis stroke="var(--text-muted)" fontSize={11} />
                   <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                      borderColor: 'rgba(255,255,255,0.1)',
-                      borderRadius: 8,
-                      fontSize: '0.8rem',
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        const d = payload[0].payload;
+                        return (
+                          <div
+                            style={{
+                              backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                              border: '1px solid rgba(255, 255, 255, 0.15)',
+                              borderRadius: 8,
+                              padding: '0.75rem 1rem',
+                              fontSize: '0.8rem',
+                              boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+                            }}
+                          >
+                            <div style={{ fontWeight: 800, color: 'var(--text-accent)', marginBottom: '0.4rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.25rem' }}>
+                              {d.full_period || d.display_label || label}
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', color: '#38bdf8', margin: '0.2rem 0' }}>
+                              <span>Approved Budget:</span>
+                              <strong>₹{d.amount_recommended_crore} Cr</strong>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', color: '#14b8a6', margin: '0.2rem 0' }}>
+                              <span>Actual Money Spent:</span>
+                              <strong>₹{d.amount_expended_crore} Cr</strong>
+                            </div>
+                            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.35rem' }}>
+                              Works Approved in Period: {d.projects_recommended}
+                            </div>
+                          </div>
+                        );
+                      }
+                      return null;
                     }}
                   />
-                  <Bar dataKey="amount_recommended_crore" name="Recommended (₹ Cr)" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="amount_expended_crore" name="Expended (₹ Cr)" fill="#14b8a6" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="amount_recommended_crore" name="Approved Budget (₹ Cr)" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="amount_expended_crore" name="Actual Money Spent (₹ Cr)" fill="#14b8a6" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
