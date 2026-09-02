@@ -6,8 +6,9 @@ import {
   AlertTriangle,
   Search,
   Users,
-  ShieldAlert,
+  ShieldCheck,
   RefreshCw,
+  FilePlus2,
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
@@ -15,8 +16,8 @@ export const Sidebar: React.FC = () => {
     <aside className="sidebar">
       <div className="sidebar-brand">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-          <ShieldAlert size={26} color="#38bdf8" />
-          <h1>MPLADS AI Monitor</h1>
+          <ShieldCheck size={28} color="#38bdf8" />
+          <h1>Digi.MPLAD</h1>
         </div>
         <div className="subtitle">Audit & Anomaly Platform</div>
       </div>
@@ -66,6 +67,14 @@ export const Sidebar: React.FC = () => {
         <div style={{ margin: '0.5rem 1rem', borderTop: '1px solid var(--border-subtle)' }} />
 
         <NavLink
+          to="/officer-portal"
+          className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+        >
+          <FilePlus2 size={18} />
+          <span>Officer Ingestion Portal</span>
+        </NavLink>
+
+        <NavLink
           to="/live-refresh"
           className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
         >
@@ -77,9 +86,10 @@ export const Sidebar: React.FC = () => {
       <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--border-subtle)' }}>
         <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
           <div><strong>MoSPI eSAKSHI Source</strong></div>
-          <div style={{ marginTop: '0.2rem' }}>SIH26102 Multi-Tier Engine</div>
+          <div style={{ marginTop: '0.2rem', color: '#38bdf8' }}>Digi.MPLAD v1.0 Production</div>
         </div>
       </div>
     </aside>
   );
 };
+

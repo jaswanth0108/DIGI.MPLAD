@@ -398,21 +398,29 @@ async def list_projects(
 
 
 @app.get("/api/projects/{project_id}")
-async def get_project(project_id: int):
+async def get_project(project_id: str):
     """Full project detail including all risk scores."""
     _ensure_data()
     df = store.master_df
-    match = df[df["project_id"] == project_id]
+    try:
+        pid_int = int(project_id)
+        match = df[df["project_id"] == pid_int]
+    except ValueError:
+        match = pd.DataFrame()
+
+    if match.empty:
+        match = df[df["project_id"].astype(str) == str(project_id)]
 
     if match.empty:
         raise HTTPException(status_code=404, detail=f"Project {project_id} not found")
 
     row = match.iloc[0]
     detail = _project_to_detail(row)
+    matched_id = int(row.get("project_id", 0))
 
     # Get anomalies for this project
     project_anomalies = [
-        a for a in store.anomalies if a.get("project_id") == project_id
+        a for a in store.anomalies if str(a.get("project_id")) == str(matched_id)
     ]
     detail["anomalies"] = project_anomalies
 
@@ -420,27 +428,40 @@ async def get_project(project_id: int):
 
 
 @app.get("/api/projects/{project_id}/explanation")
-async def get_project_explanation(project_id: int):
+async def get_project_explanation(project_id: str):
     """Full risk explanation with narrative and SHAP values."""
     _ensure_data()
     df = store.master_df
-    match = df[df["project_id"] == project_id]
+    try:
+        pid_int = int(project_id)
+        match = df[df["project_id"] == pid_int]
+    except ValueError:
+        match = pd.DataFrame()
+
+    if match.empty:
+        match = df[df["project_id"].astype(str) == str(project_id)]
 
     if match.empty:
         raise HTTPException(status_code=404, detail=f"Project {project_id} not found")
 
     row = match.iloc[0].to_dict()
+    matched_id = int(row.get("project_id", 0))
     project_anomalies = [
-        a for a in store.anomalies if a.get("project_id") == project_id
+        a for a in store.anomalies if str(a.get("project_id")) == str(matched_id)
     ]
 
-    # Generate narrative
-    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    from explainability.nl_explanations import generate_risk_narrative
-    narrative = generate_risk_narrative(row, project_anomalies)
+    # Generate narrative safely
+    narrative = ""
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        from explainability.nl_explanations import generate_risk_narrative
+        narrative = generate_risk_narrative(row, project_anomalies)
+    except Exception as e:
+        logger.warning(f"Could not generate narrative: {e}")
+        narrative = f"Project #{matched_id} located in {row.get('state_name', '')} - {row.get('constituency_name', '')}. Overall Risk Score: {row.get('overall_risk_score', 0)}/100 ({row.get('risk_band', 'LOW')})."
 
     return {
-        "project_id": project_id,
+        "project_id": matched_id,
         "overall_risk_score": _safe_float(row.get("overall_risk_score")),
         "risk_band": row.get("risk_band"),
         "score_breakdown": {
@@ -462,18 +483,26 @@ async def get_project_explanation(project_id: int):
 
 
 @app.post("/api/projects/{project_id}/audit-case")
-async def generate_audit_case(project_id: int):
+async def generate_audit_case(project_id: str):
     """Generate an audit investigation card for a project."""
     _ensure_data()
     df = store.master_df
-    match = df[df["project_id"] == project_id]
+    try:
+        pid_int = int(project_id)
+        match = df[df["project_id"] == pid_int]
+    except ValueError:
+        match = pd.DataFrame()
+
+    if match.empty:
+        match = df[df["project_id"].astype(str) == str(project_id)]
 
     if match.empty:
         raise HTTPException(status_code=404, detail=f"Project {project_id} not found")
 
     row = match.iloc[0].to_dict()
+    matched_id = int(row.get("project_id", 0))
     project_anomalies = [
-        a for a in store.anomalies if a.get("project_id") == project_id
+        a for a in store.anomalies if str(a.get("project_id")) == str(matched_id)
     ]
 
     from explainability.nl_explanations import generate_audit_case
@@ -501,23 +530,51 @@ async def get_high_risk_projects(
     }
 
 
-@app.get("/api/analytics/mp/{mp_name}")
-async def mp_analytics(mp_name: str):
-    """MP-level analytics and risk profile."""
+@app.get("/api/analytics/mps")
+async def list_mps():
+    """Get sorted directory of distinct MPs with state and constituency."""
     _ensure_data()
     df = store.master_df
-    mp_df = df[df["mp_name"].str.upper().str.contains(mp_name.upper(), na=False)]
+    mp_groups = []
+    for mp_name, group in df.groupby("mp_name"):
+        state = group["state_name"].mode().iloc[0] if not group["state_name"].mode().empty else ""
+        const = group["constituency_name"].mode().iloc[0] if not group["constituency_name"].mode().empty else ""
+        mp_groups.append({
+            "mp_name": mp_name,
+            "state": state,
+            "constituency": const,
+            "total_projects": len(group),
+            "avg_risk_score": round(float(group["overall_risk_score"].mean()), 2),
+        })
+    mp_groups.sort(key=lambda x: x["mp_name"])
+    return {"mps": mp_groups}
 
-    if mp_df.empty:
-        raise HTTPException(status_code=404, detail=f"MP '{mp_name}' not found")
+
+@app.get("/api/analytics/mp/{mp_name}")
+async def mp_analytics(mp_name: str):
+    """MP-level analytics and risk profile for a single distinct MP."""
+    _ensure_data()
+    df = store.master_df
+    
+    clean_name = mp_name.strip().upper()
+    exact_match = df[df["mp_name"].str.upper() == clean_name]
+    if not exact_match.empty:
+        target_name = exact_match.iloc[0]["mp_name"]
+        mp_df = exact_match
+    else:
+        matches = df[df["mp_name"].str.upper().str.contains(clean_name, na=False)]
+        if matches.empty:
+            raise HTTPException(status_code=404, detail=f"MP '{mp_name}' not found")
+        target_name = matches["mp_name"].value_counts().index[0]
+        mp_df = df[df["mp_name"] == target_name]
 
     total_alloc = mp_df["allocated_amount"].sum() or 0
     total_exp = mp_df["expenditure_amt"].sum() or 0
 
     return {
-        "mp_name": mp_name,
-        "state": mp_df["state_name"].mode().iloc[0] if not mp_df["state_name"].mode().empty else None,
-        "constituency": mp_df["constituency_name"].mode().iloc[0] if not mp_df["constituency_name"].mode().empty else None,
+        "mp_name": target_name,
+        "state": mp_df["state_name"].mode().iloc[0] if not mp_df["state_name"].mode().empty else "N/A",
+        "constituency": mp_df["constituency_name"].mode().iloc[0] if not mp_df["constituency_name"].mode().empty else "N/A",
         "total_projects": len(mp_df),
         "total_allocated_crore": round(total_alloc / 1_00_00_000, 2),
         "total_expenditure_crore": round(total_exp / 1_00_00_000, 2),

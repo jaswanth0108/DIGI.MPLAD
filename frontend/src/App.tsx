@@ -8,6 +8,7 @@ import { AuditCase } from './pages/AuditCase';
 import { SearchPage } from './pages/SearchPage';
 import { MPAnalytics } from './pages/MPAnalytics';
 import { LiveRefresh } from './pages/LiveRefresh';
+import { OfficerIngestion } from './pages/OfficerIngestion';
 import './index.css';
 
 export function App() {
@@ -24,6 +25,7 @@ export function App() {
             <Route path="/audit-case/:id" element={<AuditCase />} />
             <Route path="/search" element={<SearchPage />} />
             <Route path="/mp-analytics" element={<MPAnalytics />} />
+            <Route path="/officer-portal" element={<OfficerIngestion />} />
             <Route path="/live-refresh" element={<LiveRefresh />} />
           </Routes>
         </main>

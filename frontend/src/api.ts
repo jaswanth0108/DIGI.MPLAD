@@ -55,6 +55,9 @@ export const api = {
   getMPAnalytics: (mpName: string) =>
     fetchJson<any>(`/api/analytics/mp/${encodeURIComponent(mpName)}`),
 
+  getMPsList: () =>
+    fetchJson<{ mps: Array<{ mp_name: string; state: string; constituency: string; total_projects: number; avg_risk_score: number }> }>('/api/analytics/mps'),
+
   getTrends: () => fetchJson<{ trends: any[] }>('/api/analytics/trends'),
   getFilterStates: () => fetchJson<{ states: string[] }>('/api/filters/states'),
   getFilterConstituencies: (state: string) =>
@@ -66,3 +69,4 @@ export const api = {
       body: JSON.stringify(data),
     }),
 };
+

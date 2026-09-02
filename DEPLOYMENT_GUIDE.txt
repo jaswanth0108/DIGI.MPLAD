@@ -1,0 +1,530 @@
+================================================================================
+DIGI.MPLAD — COMPLETE PRODUCTION & LOCAL DEPLOYMENT GUIDE
+AI-Powered Anomaly Detection & Audit Surveillance Platform for MPLADS
+Smart India Hackathon 2026 | Ministry of Statistics and Programme Implementation
+================================================================================
+
+TABLE OF CONTENTS
+-----------------
+1. ARCHITECTURE & DEPLOYMENT OVERVIEW
+2. SYSTEM REQUIREMENTS & PREREQUISITES
+3. ENVIRONMENT CONFIGURATION (.env)
+4. METHOD 1: LOCAL DEVELOPMENT DEPLOYMENT (WINDOWS / LINUX / MACOS)
+5. METHOD 2: CONTAINERIZED DEPLOYMENT (DOCKER & DOCKER COMPOSE)
+6. METHOD 3: PRODUCTION CLOUD SERVER DEPLOYMENT (UBUNTU / AWS / NGINX / SSL)
+7. DATABASE INITIALIZATION (POSTGRESQL SETUP)
+8. DATA PIPELINE EXECUTION (OFFLINE DEMO VS LIVE MOSPI SYNC)
+9. POST-DEPLOYMENT VERIFICATION & HEALTH CHECKS
+10. BACKUP, MAINTENANCE & TROUBLESHOOTING GUIDE
+
+
+================================================================================
+1. ARCHITECTURE & DEPLOYMENT OVERVIEW
+================================================================================
+
+The DIGI.MPLAD platform consists of three core components:
+
+1. FRONTEND:
+   - Framework: React 19 + TypeScript + Vite
+   - State Management: TanStack React Query v5
+   - Visuals: Recharts + Lucide Icons + Custom Responsive CSS
+   - Default Port: 5173 (Dev) or 80/443 via Nginx (Production)
+
+2. BACKEND API:
+   - Framework: FastAPI 0.111 + Uvicorn ASGI Server
+   - Core Processing: In-Memory Pandas DataStore (Sub-50ms query latency)
+   - ML Engine: scikit-learn Isolation Forest + SHAP Explainability
+   - Detection: 11 Deterministic Audit Rules (R001-R011) + Peer Scoring
+   - Default Port: 8000
+
+3. DATA & STORAGE LAYER:
+   - Development/Demo: In-memory Pandas + JSON files in data/processed/
+   - Production: PostgreSQL 16 (Relational DB) + persistent volume mounts
+
+
+================================================================================
+2. SYSTEM REQUIREMENTS & PREREQUISITES
+================================================================================
+
+HARDWARE REQUIREMENTS:
+----------------------
+- Minimum:
+  * CPU: 2 Cores (x86_64 or ARM64)
+  * RAM: 4 GB
+  * Disk Space: 10 GB free space
+- Recommended (Production):
+  * CPU: 4 Cores
+  * RAM: 8 GB or 16 GB
+  * Disk Space: 30 GB SSD
+
+SOFTWARE REQUIREMENTS:
+----------------------
+- Operating System: Windows 10/11, Ubuntu 22.04 LTS, Debian 12, or macOS
+- Python: Version 3.11.x (Python 3.12 is also supported)
+- Node.js: Version 20.x LTS or higher
+- npm: Version 10.x or higher
+- Git: Version 2.40+
+- Optional for Containerized: Docker Engine 24+ & Docker Compose v2+
+
+
+================================================================================
+3. ENVIRONMENT CONFIGURATION (.env)
+================================================================================
+
+Before starting either backend or containerized deployment, create your
+environment file. In the project root (`mplads-monitor/`), copy `.env.example`:
+
+Windows PowerShell:
+    Copy-Item .env.example .env
+
+Linux / macOS:
+    cp .env.example .env
+
+Key Parameters in .env:
+-----------------------
+# Database Configuration
+DATABASE_URL=postgresql://mplads_user:mplads_pass@localhost:5432/mplads_db
+POSTGRES_DB=mplads_db
+POSTGRES_USER=mplads_user
+POSTGRES_PASSWORD=mplads_pass
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+
+# API Server Settings
+API_HOST=0.0.0.0
+API_PORT=8000
+DEBUG=false
+CORS_ORIGINS=http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173
+
+# MoSPI Portal Integration
+MPLADS_API_BASE=https://mplads.mospi.gov.in
+MPLADS_REQUEST_TIMEOUT=120
+MPLADS_MAX_RETRIES=3
+
+# ML Model Configuration
+MODEL_VERSION=1.0.0
+RULES_VERSION=1.0.0
+ISOLATION_FOREST_CONTAMINATION=0.05
+SIMILARITY_THRESHOLD=0.75
+
+# Composite Risk Weights (Must sum to 1.0)
+WEIGHT_FINANCIAL=0.25
+WEIGHT_DELAY=0.20
+WEIGHT_EXPENDITURE=0.20
+WEIGHT_DUPLICATE=0.15
+WEIGHT_PEER=0.10
+WEIGHT_ML=0.10
+
+# Security
+SECRET_KEY=generate_a_random_64_character_hex_string_for_production
+
+
+================================================================================
+4. METHOD 1: LOCAL DEVELOPMENT DEPLOYMENT (WINDOWS / LINUX / MACOS)
+================================================================================
+
+Follow this method to run the project directly on your machine without Docker.
+
+STEP 4.1: CLONE AND NAVIGATE TO PROJECT
+---------------------------------------
+Open your terminal / PowerShell:
+    git clone https://github.com/jaswanth0108/DIGI.MPLAD.git
+    cd DIGI.MPLAD/mplads-monitor
+
+STEP 4.2: SETUP PYTHON VIRTUAL ENVIRONMENT (BACKEND)
+---------------------------------------------------
+On Windows (PowerShell):
+    python -m venv .venv
+    .\.venv\Scripts\Activate.ps1
+    python -m pip install --upgrade pip
+    pip install -r backend/requirements.txt
+
+On Linux / macOS:
+    python3 -m venv .venv
+    source .venv/bin/activate
+    python -m pip install --upgrade pip
+    pip install -r backend/requirements.txt
+
+STEP 4.3: INITIALIZE DATA & EXECUTE PIPELINE
+--------------------------------------------
+Before launching the server, execute the pipeline to generate baseline data,
+compute features, train the Isolation Forest model, and score all records.
+
+Option A — Offline Demo Mode (Recommended for testing, generates 5,000 projects):
+    python -m backend.etl.pipeline --demo
+
+Option B — Live Portal Fetch (Requires active internet to connect to MoSPI):
+    python -m backend.etl.pipeline
+
+Verification:
+Inspect `data/processed/`. You should see:
+- `master_projects_latest.json`
+- `anomaly_results_latest.json`
+- `duplicate_pairs_latest.json`
+
+STEP 4.4: LAUNCH THE FASTAPI BACKEND SERVER
+-------------------------------------------
+From the `mplads-monitor` directory with the virtual environment activated:
+    python -m uvicorn backend.api.main:app --host 0.0.0.0 --port 8000 --reload
+
+The API server will start at:
+- API Base: http://localhost:8000
+- Swagger UI (Interactive API Docs): http://localhost:8000/docs
+- Health Check: http://localhost:8000/api/health
+
+STEP 4.5: INSTALL & RUN THE FRONTEND (REACT / VITE)
+--------------------------------------------------
+Open a SECOND terminal window, navigate to the frontend directory:
+    cd DIGI.MPLAD/mplads-monitor/frontend
+    npm install
+    npm run dev
+
+The Vite dev server will display:
+  VITE v8.2.2  ready in 320 ms
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+
+STEP 4.6: ACCESS THE APPLICATION
+--------------------------------
+Open your browser and navigate to:
+    http://localhost:5173
+
+All dashboards (National Overview, High-Risk Queue, State View, MP Analytics)
+will be live and pulling data from the running backend on port 8000.
+
+
+================================================================================
+5. METHOD 2: CONTAINERIZED DEPLOYMENT (DOCKER & DOCKER COMPOSE)
+================================================================================
+
+This is the fastest, most reliable production-grade method. Docker Compose runs:
+1. PostgreSQL 16 database (`mplads-db` on port 5432)
+2. FastAPI backend (`mplads-backend` on port 8000)
+3. React Vite frontend (`mplads-frontend` on port 5173)
+
+STEP 5.1: VERIFY DOCKER INSTALLATION
+------------------------------------
+Verify Docker and Docker Compose are installed:
+    docker --version
+    docker compose version
+
+STEP 5.2: BUILD AND START CONTAINERS
+------------------------------------
+From the root directory (`mplads-monitor/`):
+
+    docker-compose up --build -d
+
+What happens automatically during this step:
+1. PostgreSQL container starts and performs database healthchecks.
+2. Backend image installs Python 3.11 packages, runs `python -m etl.pipeline --demo`,
+   trains ML models, and launches Uvicorn on 0.0.0.0:8000.
+3. Frontend image installs Node dependencies and starts the frontend on port 5173.
+
+STEP 5.3: CHECK CONTAINER STATUS & LOGS
+---------------------------------------
+View running services:
+    docker compose ps
+
+Check backend startup logs:
+    docker compose logs -f backend
+
+Check frontend startup logs:
+    docker compose logs -f frontend
+
+STEP 5.4: STOPPING OR RESTARTING
+--------------------------------
+To stop the stack without deleting data:
+    docker-compose stop
+
+To restart the stack:
+    docker-compose start
+
+To shut down and remove containers:
+    docker-compose down
+
+To rebuild completely after modifying code:
+    docker-compose up --build -d
+
+
+================================================================================
+6. METHOD 3: PRODUCTION CLOUD SERVER DEPLOYMENT (UBUNTU / AWS / NGINX / SSL)
+================================================================================
+
+This section details how to deploy the platform on a cloud virtual machine
+(such as AWS EC2, DigitalOcean Droplet, Google Compute Engine, or Azure VM)
+running Ubuntu 22.04 LTS.
+
+STEP 6.1: SERVER PROVISIONING & FIREWALL RULES
+----------------------------------------------
+Open the following inbound ports in your Cloud Provider Security Group:
+- Port 22: SSH (restricted to your IP)
+- Port 80: HTTP
+- Port 443: HTTPS
+
+Connect to your server via SSH:
+    ssh -i your-key.pem ubuntu@your-server-ip
+
+Update packages:
+    sudo apt update && sudo apt upgrade -y
+    sudo apt install -y python3-pip python3-venv nodejs npm git nginx curl
+
+STEP 6.2: SETUP APPLICATION CODE & SYSTEM USER
+----------------------------------------------
+Create a dedicated deployment directory:
+    sudo mkdir -p /var/www/mplads
+    sudo chown -R $USER:$USER /var/www/mplads
+    cd /var/www/mplads
+    git clone https://github.com/jaswanth0108/DIGI.MPLAD.git .
+    cd mplads-monitor
+
+STEP 6.3: SETUP BACKEND SYSTEMD SERVICE
+---------------------------------------
+1. Create virtual environment and install packages:
+    python3 -m venv .venv
+    source .venv/bin/activate
+    pip install --upgrade pip
+    pip install -r backend/requirements.txt
+    pip install gunicorn
+
+2. Run pipeline once to initialize baseline datasets:
+    python -m backend.etl.pipeline --demo
+
+3. Create a Systemd service file for FastAPI backend:
+    sudo nano /etc/systemd/system/mplads-backend.service
+
+Paste the following configuration:
+[Unit]
+Description=DIGI.MPLAD FastAPI Backend Service
+After=network.target
+
+[Service]
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/var/www/mplads/mplads-monitor
+Environment="PATH=/var/www/mplads/mplads-monitor/.venv/bin"
+EnvironmentFile=/var/www/mplads/mplads-monitor/.env
+ExecStart=/var/www/mplads/mplads-monitor/.venv/bin/uvicorn backend.api.main:app --host 127.0.0.1 --port 8000 --workers 4
+
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+
+4. Enable and start the backend service:
+    sudo systemctl daemon-reload
+    sudo systemctl enable mplads-backend
+    sudo systemctl start mplads-backend
+    sudo systemctl status mplads-backend
+
+STEP 6.4: BUILD PRODUCTION FRONTEND ASSETS
+------------------------------------------
+1. Navigate to frontend directory:
+    cd /var/www/mplads/mplads-monitor/frontend
+
+2. Set production API target in `.env.production`:
+    echo "VITE_API_URL=/api" > .env.production
+
+3. Install packages and build optimized bundle:
+    npm install
+    npm run build
+
+The compiled assets will be created in:
+    /var/www/mplads/mplads-monitor/frontend/dist
+
+STEP 6.5: CONFIGURE NGINX REVERSE PROXY
+---------------------------------------
+Create an Nginx server block:
+    sudo nano /etc/nginx/sites-available/mplads
+
+Paste the following Nginx configuration (replace `your-domain.gov.in` with your domain):
+server {
+    listen 80;
+    server_name your-domain.gov.in www.your-domain.gov.in;
+
+    # Static Frontend
+    location / {
+        root /var/www/mplads/mplads-monitor/frontend/dist;
+        index index.html index.htm;
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Reverse Proxy for FastAPI Backend
+    location /api/ {
+        proxy_pass http://127.0.0.1:8000/api/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Proxy Swagger Docs
+    location /docs {
+        proxy_pass http://127.0.0.1:8000/docs;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+    location /openapi.json {
+        proxy_pass http://127.0.0.1:8000/openapi.json;
+        proxy_set_header Host $host;
+    }
+}
+
+Enable the site and reload Nginx:
+    sudo ln -s /etc/nginx/sites-available/mplads /etc/nginx/sites-enabled/
+    sudo nginx -t
+    sudo systemctl restart nginx
+
+STEP 6.6: SECURE WITH FREE SSL (CERTBOT LET'S ENCRYPT)
+-----------------------------------------------------
+Install Certbot for automated HTTPS:
+    sudo apt install -y certbot python3-certbot-nginx
+    sudo certbot --nginx -d your-domain.gov.in -d www.your-domain.gov.in
+
+Certbot will automatically verify your domain, install SSL certificates, and
+configure automatic HTTPS redirection.
+
+
+================================================================================
+7. DATABASE INITIALIZATION (POSTGRESQL SETUP)
+================================================================================
+
+If migrating from in-memory JSON mode to PostgreSQL persistence in production:
+
+1. Install PostgreSQL on Ubuntu:
+    sudo apt install -y postgresql postgresql-contrib
+
+2. Create Database & User:
+    sudo -u postgres psql
+    CREATE DATABASE mplads_db;
+    CREATE USER mplads_user WITH ENCRYPTED PASSWORD 'mplads_secure_password';
+    GRANT ALL PRIVILEGES ON DATABASE mplads_db TO mplads_user;
+    \q
+
+3. Update `.env`:
+    DATABASE_URL=postgresql://mplads_user:mplads_secure_password@localhost:5432/mplads_db
+
+4. Run Database Migrations via Alembic:
+    cd /var/www/mplads/mplads-monitor
+    source .venv/bin/activate
+    alembic upgrade head
+
+
+================================================================================
+8. DATA PIPELINE EXECUTION (OFFLINE DEMO VS LIVE MOSPI SYNC)
+================================================================================
+
+The pipeline can be re-run at any time to ingest new projects and recalculate
+risk scores without restarting the server.
+
+MANUAL RUN VIA CLI:
+-------------------
+# To run with live MoSPI eSAKSHI data:
+python -m backend.etl.pipeline
+
+# To run with synthetic demonstration data:
+python -m backend.etl.pipeline --demo
+
+HOT-RELOAD DATA INTO RUNNING SERVER:
+------------------------------------
+Once the pipeline script completes, notify the running FastAPI server:
+    curl -X GET http://localhost:8000/api/data/reload
+
+Or click the "Reload Data Now" button on the **Live Data Refresh** page in the UI.
+
+AUTOMATING REGULAR SYNCS VIA CRON (PRODUCTION):
+----------------------------------------------
+To synchronize with MoSPI portal daily at 02:00 AM UTC:
+    crontab -e
+
+Add this line:
+    0 2 * * * cd /var/www/mplads/mplads-monitor && /var/www/mplads/mplads-monitor/.venv/bin/python -m backend.etl.pipeline && curl -s http://127.0.0.1:8000/api/data/reload > /dev/null
+
+
+================================================================================
+9. POST-DEPLOYMENT VERIFICATION & HEALTH CHECKS
+================================================================================
+
+Run these automated verification checks after deployment:
+
+1. CHECK API HEALTH ENDPOINT:
+    curl -s http://localhost:8000/api/health | json_pp
+
+Expected Output:
+{
+   "status": "ok",
+   "database": "loaded",
+   "model_version": "1.0.0",
+   "rules_version": "1.0.0",
+   "total_projects": 5000,
+   "timestamp": "..."
+}
+
+2. CHECK NATIONAL OVERVIEW DATA:
+    curl -s http://localhost:8000/api/dashboard/overview | head -n 20
+
+3. CHECK HIGH-RISK PROJECTS ENDPOINT:
+    curl -s "http://localhost:8000/api/projects?risk_band=HIGH,CRITICAL&page_size=3"
+
+4. RUN CORE AUTOMATED PYTEST SUITE:
+    pytest backend/tests/test_core.py -v
+
+Expected Output:
+============================== 5 passed in 4.85s ==============================
+
+
+================================================================================
+10. BACKUP, MAINTENANCE & TROUBLESHOOTING GUIDE
+================================================================================
+
+PROBLEM 1: "fatal: Unable to create '.git/index.lock': File exists"
+------------------------------------------------------------------
+Cause: A previous git command was interrupted before completing.
+Solution:
+    Windows PowerShell:
+      Remove-Item -Force .git\index.lock
+    Linux/macOS:
+      rm -f .git/index.lock
+
+PROBLEM 2: "Port 8000 or Port 5173 already in use"
+--------------------------------------------------
+Cause: Another process is occupying the required port.
+Solution:
+    Windows:
+      netstat -ano | findstr :8000
+      taskkill /PID <PID> /F
+    Linux:
+      sudo lsof -i :8000
+      sudo kill -9 <PID>
+
+PROBLEM 3: "No data loaded. Run pipeline first." (HTTP 503)
+-----------------------------------------------------------
+Cause: The backend was started before `master_projects_latest.json` was generated.
+Solution:
+    python -m backend.etl.pipeline --demo
+    curl -X GET http://localhost:8000/api/data/reload
+
+PROBLEM 4: CORS Errors in Browser Console
+-----------------------------------------
+Cause: Frontend URL is not registered in `CORS_ORIGINS`.
+Solution:
+    Open `.env` and add your frontend origin:
+    CORS_ORIGINS=http://localhost:5173,https://your-domain.gov.in
+    Restart the backend server.
+
+BACKUP PROCEDURES:
+------------------
+To back up the processed data and trained ML models:
+    tar -czvf mplads_backup_$(date +%Y%m%d).tar.gz data/processed/ ml/models/
+
+To restore:
+    tar -xzvf mplads_backup_20260902.tar.gz
+
+================================================================================
+DEPLOYMENT COMPLETE
+For additional technical architecture details, refer to TECHNICAL_DOCUMENTATION.txt
+================================================================================
