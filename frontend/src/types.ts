@@ -7,6 +7,8 @@ export interface ProjectSummary {
   city_name?: string;
   ida_name?: string;
   location_type?: string;
+  category?: string;
+  work_description?: string;
   allocated_amount?: number;
   expenditure_amt?: number;
   recommended_date?: string;
@@ -123,7 +125,7 @@ export interface AuditCaseData {
     explanation?: string;
     action_advice?: string;
   }>;
-  evidence: any;
+  evidence?: any;
   recommended_action: string;
   disclaimer: string;
 }

@@ -37,17 +37,19 @@ class ProjectSummary(BaseModel):
 
     project_id: int
     house_type: Optional[str] = "LOK"
-    state_name: Optional[str]
-    constituency_name: Optional[str]
-    mp_name: Optional[str]
+    state_name: Optional[str] = None
+    constituency_name: Optional[str] = None
+    mp_name: Optional[str] = None
     city_name: Optional[str] = None
     ida_name: Optional[str] = None
     location_type: Optional[str] = "Rural"
-    allocated_amount: Optional[float]
-    expenditure_amt: Optional[float]
-    recommended_date: Optional[date] = None
+    category: Optional[str] = None
+    work_description: Optional[str] = None
+    allocated_amount: Optional[float] = None
+    expenditure_amt: Optional[float] = None
+    recommended_date: Optional[Any] = None
     work_status: Optional[str] = "On Going"
-    dataset_source: Optional[str] = "Manual Entry / Live Submission"
+    dataset_source: Optional[str] = "Authorized Officer Ingestion"
     expenditure_ratio: Optional[float] = None
     project_age_days: Optional[int] = None
     is_completed: Optional[bool] = False
