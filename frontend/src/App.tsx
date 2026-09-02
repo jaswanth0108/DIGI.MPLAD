@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
+import { SplashScreen } from './components/SplashScreen';
 import { NationalOverview } from './pages/NationalOverview';
 import { HighRiskProjects } from './pages/HighRiskProjects';
 import { StateView } from './pages/StateView';
@@ -13,24 +14,27 @@ import './index.css';
 
 export function App() {
   return (
-    <Router>
-      <div className="app-layout">
-        <Sidebar />
-        <main className="main-content">
-          <Routes>
-            <Route path="/" element={<NationalOverview />} />
-            <Route path="/high-risk" element={<HighRiskProjects />} />
-            <Route path="/states" element={<StateView />} />
-            <Route path="/projects/:id" element={<ProjectDetail />} />
-            <Route path="/audit-case/:id" element={<AuditCase />} />
-            <Route path="/search" element={<SearchPage />} />
-            <Route path="/how-it-works" element={<HowItWorks />} />
-            <Route path="/officer-portal" element={<OfficerIngestion />} />
-            <Route path="/live-refresh" element={<LiveRefresh />} />
-          </Routes>
-        </main>
-      </div>
-    </Router>
+    <>
+      <SplashScreen />
+      <Router>
+        <div className="app-layout">
+          <Sidebar />
+          <main className="main-content">
+            <Routes>
+              <Route path="/" element={<NationalOverview />} />
+              <Route path="/high-risk" element={<HighRiskProjects />} />
+              <Route path="/states" element={<StateView />} />
+              <Route path="/projects/:id" element={<ProjectDetail />} />
+              <Route path="/audit-case/:id" element={<AuditCase />} />
+              <Route path="/search" element={<SearchPage />} />
+              <Route path="/how-it-works" element={<HowItWorks />} />
+              <Route path="/officer-portal" element={<OfficerIngestion />} />
+              <Route path="/live-refresh" element={<LiveRefresh />} />
+            </Routes>
+          </main>
+        </div>
+      </Router>
+    </>
   );
 }
 

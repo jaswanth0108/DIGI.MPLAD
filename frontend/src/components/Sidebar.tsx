@@ -5,7 +5,6 @@ import {
   MapPin,
   AlertTriangle,
   Search,
-  ShieldCheck,
   RefreshCw,
   FilePlus2,
   BrainCircuit,
@@ -15,11 +14,29 @@ export const Sidebar: React.FC = () => {
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-          <ShieldCheck size={28} color="#38bdf8" />
-          <h1>Digi.MPLAD</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+          <div
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: '50%',
+              overflow: 'hidden',
+              background: '#ffffff',
+              border: '1.5px solid rgba(56, 189, 248, 0.4)',
+              boxShadow: '0 0 12px rgba(56, 189, 248, 0.2)',
+              flexShrink: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <img src="/logo.png" alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+          </div>
+          <div>
+            <h1>Digi.MPLAD</h1>
+            <div className="subtitle">Audit &amp; Anomaly Platform</div>
+          </div>
         </div>
-        <div className="subtitle">Audit & Anomaly Platform</div>
       </div>
 
       <nav className="sidebar-nav">

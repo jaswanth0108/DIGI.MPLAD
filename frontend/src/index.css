@@ -725,3 +725,32 @@ select option:checked {
   .main-content { margin-left: 0; padding: 1rem; }
   .kpi-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ── Splash Screen Animation Keyframes ─────────────────────────────────────── */
+@keyframes splash-logo-pulse {
+  0% {
+    transform: scale(0.96);
+    box-shadow: 0 0 35px rgba(56, 189, 248, 0.3), 0 0 70px rgba(20, 184, 166, 0.15);
+  }
+  50% {
+    transform: scale(1.03);
+    box-shadow: 0 0 60px rgba(56, 189, 248, 0.5), 0 0 120px rgba(20, 184, 166, 0.35);
+  }
+  100% {
+    transform: scale(0.96);
+    box-shadow: 0 0 35px rgba(56, 189, 248, 0.3), 0 0 70px rgba(20, 184, 166, 0.15);
+  }
+}
+
+@keyframes splash-bar {
+  0% {
+    transform: translateX(-100%);
+  }
+  60% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(0%);
+  }
+}
+
