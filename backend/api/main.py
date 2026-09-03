@@ -450,19 +450,32 @@ async def list_projects(
     }
 
 
+def _find_project_row(project_id: str) -> pd.DataFrame:
+    """Find a project by int or string ID cleanly."""
+    df = store.master_df
+    if df is None or df.empty:
+        return pd.DataFrame()
+    clean_id = str(project_id).replace("#", "").strip()
+    try:
+        pid_int = int(clean_id)
+        match = df[df["project_id"] == pid_int]
+        if not match.empty:
+            return match
+    except (ValueError, TypeError):
+        pass
+
+    match = df[df["project_id"].astype(str) == clean_id]
+    if not match.empty:
+        return match
+
+    return df[df["project_id"].astype(str) == str(project_id)]
+
+
 @app.get("/api/projects/{project_id}")
 async def get_project(project_id: str):
     """Full project detail including all risk scores."""
     _ensure_data()
-    df = store.master_df
-    try:
-        pid_int = int(project_id)
-        match = df[df["project_id"] == pid_int]
-    except ValueError:
-        match = pd.DataFrame()
-
-    if match.empty:
-        match = df[df["project_id"].astype(str) == str(project_id)]
+    match = _find_project_row(project_id)
 
     if match.empty:
         raise HTTPException(status_code=404, detail=f"Project {project_id} not found")
@@ -484,15 +497,7 @@ async def get_project(project_id: str):
 async def get_project_explanation(project_id: str):
     """Full risk explanation with narrative and plain-English citizen briefing."""
     _ensure_data()
-    df = store.master_df
-    try:
-        pid_int = int(project_id)
-        match = df[df["project_id"] == pid_int]
-    except ValueError:
-        match = pd.DataFrame()
-
-    if match.empty:
-        match = df[df["project_id"].astype(str) == str(project_id)]
+    match = _find_project_row(project_id)
 
     if match.empty:
         raise HTTPException(status_code=404, detail=f"Project {project_id} not found")
@@ -545,15 +550,7 @@ async def get_project_explanation(project_id: str):
 async def generate_audit_case(project_id: str):
     """Generate an audit investigation card for a project."""
     _ensure_data()
-    df = store.master_df
-    try:
-        pid_int = int(project_id)
-        match = df[df["project_id"] == pid_int]
-    except ValueError:
-        match = pd.DataFrame()
-
-    if match.empty:
-        match = df[df["project_id"].astype(str) == str(project_id)]
+    match = _find_project_row(project_id)
 
     if match.empty:
         raise HTTPException(status_code=404, detail=f"Project {project_id} not found")

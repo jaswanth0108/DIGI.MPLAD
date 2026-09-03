@@ -6,17 +6,39 @@ import type {
   AuditCaseData,
 } from './types';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE = import.meta.env.VITE_API_URL || '';
 
 async function fetchJson<T>(endpoint: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${endpoint}`, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options,
-  });
-  if (!res.ok) {
-    throw new Error(`API error (${res.status}): ${res.statusText}`);
+  const urlsToTry = [
+    API_BASE ? `${API_BASE}${endpoint}` : endpoint,
+    `http://127.0.0.1:8000${endpoint}`,
+    `http://localhost:8000${endpoint}`,
+  ];
+  const uniqueUrls = Array.from(new Set(urlsToTry.filter(Boolean)));
+
+  let lastError: any = null;
+  for (const url of uniqueUrls) {
+    try {
+      const res = await fetch(url, {
+        headers: { 'Content-Type': 'application/json' },
+        ...options,
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+      if (res.status === 404) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.detail || `Project Not Found (404)`);
+      }
+      lastError = new Error(`API error (${res.status}): ${res.statusText}`);
+    } catch (err: any) {
+      lastError = err;
+      if (err.message && err.message.includes('404')) {
+        throw err;
+      }
+    }
   }
-  return res.json();
+  throw lastError || new Error(`Failed to fetch from ${endpoint}`);
 }
 
 export const api = {
@@ -72,18 +94,33 @@ export const api = {
   uploadExcelProjects: async (file: File) => {
     const formData = new FormData();
     formData.append('file', file);
-    const res = await fetch(`${API_BASE}/api/projects/upload-excel`, {
-      method: 'POST',
-      body: formData,
-    });
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.detail || `Upload error (${res.status}): ${res.statusText}`);
+    const urlsToTry = [
+      API_BASE ? `${API_BASE}/api/projects/upload-excel` : '/api/projects/upload-excel',
+      'http://127.0.0.1:8000/api/projects/upload-excel',
+      'http://localhost:8000/api/projects/upload-excel',
+    ];
+    const uniqueUrls = Array.from(new Set(urlsToTry.filter(Boolean)));
+    let lastError: any = null;
+    for (const url of uniqueUrls) {
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          body: formData,
+        });
+        if (res.ok) {
+          return await res.json();
+        }
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.detail || `Upload error (${res.status}): ${res.statusText}`);
+      } catch (err: any) {
+        lastError = err;
+      }
     }
-    return res.json();
+    throw lastError || new Error('Upload failed');
   },
 
-  getTemplateDownloadUrl: () => `${API_BASE}/api/projects/template/download`,
+  getTemplateDownloadUrl: () => (API_BASE ? `${API_BASE}/api/projects/template/download` : '/api/projects/template/download'),
 };
+
 
 

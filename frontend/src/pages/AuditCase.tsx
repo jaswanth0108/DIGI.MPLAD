@@ -13,15 +13,16 @@ export const AuditCase: React.FC = () => {
 
   useEffect(() => {
     if (!id) return;
+    const cleanId = id.replace(/[^0-9]/g, '') || id;
     async function load() {
       try {
         setLoading(true);
         try {
-          const res = await api.generateAuditCase(id!);
+          const res = await api.generateAuditCase(cleanId);
           setAuditCase(res);
         } catch (genErr) {
           console.warn('generateAuditCase API failed, generating client-side fallback:', genErr);
-          const proj = await api.getProjectDetail(id!);
+          const proj = await api.getProjectDetail(cleanId);
           const alloc = (proj.allocated_amount || 0).toLocaleString();
           const exp = (proj.expenditure_amt || 0).toLocaleString();
           const anomalies = (proj.anomalies || []).map((a: any) => ({
